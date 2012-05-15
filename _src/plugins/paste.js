@@ -212,8 +212,13 @@
             });
             //ie下beforepaste在点击右键时也会触发，所以用监控键盘才处理
                 domUtils.on(me.body, browser.ie ? 'keydown' : 'paste',function(e){
-                    if(browser.ie && (!e.ctrlKey || e.keyCode != '86'))
+                    if (browser.ie) {
+                      if (!e.ctrlKey || e.keyCode != '86') {
                         return;
+                      } else {
+                        iebk.ctrlv = true
+                      }
+                    }
                     getClipboardData.call( me, function( div ) {
                         filter(div);
                         function hideMsg(){
@@ -240,6 +245,62 @@
 
 
                 })
+
+            var iebk = {}
+            , ierange
+            , startId = '___ie_paste_start___'
+            , bookmarkStart = function() {
+                var startNode = me.document.getElementById(startId) // 光标的开始点
+                if (startNode) {
+                  domUtils.remove(startNode)
+                } else {
+                  startNode = me.document.createElement('span')
+                  startNode.id = startId
+                }
+                ierange = me.selection.getRange()
+                var _bk = ierange.createBookmark()
+                ierange.setStartBefore(_bk.start)
+                // 未选中文字时，IE 粘贴入文字会把前面的空标签清除，这样
+                // startNode 在粘贴后会消失，需要将 startNode 设置到当前标签外层
+                while ( ierange.startOffset == 0 ) {
+                    if ( domUtils.isBody( ierange.startContainer ) )break;
+                    ierange.setStartBefore( ierange.startContainer );
+                }
+                ierange.insertNode(startNode) // 将 startNode 设置到当前标签外层
+                ierange.moveToBookmark(_bk) // 再把光标设置回来
+                if (!ierange.collapsed) ierange.select(true)
+                iebk.start = startNode
+              }
+            , removeBookmarkStart = function() {
+                var startNode = me.document.getElementById(startId)
+                if (startNode) {
+                  domUtils.remove(startNode)
+                }
+              }
+            if (browser.ie ) {
+              domUtils.on(me.body, 'contextmenu', bookmarkStart)
+              domUtils.on(me.body, 'click', removeBookmarkStart)
+              domUtils.on(me.window, 'blur', removeBookmarkStart)
+              domUtils.on(me.body, 'paste', function(ev){
+                if (iebk.ctrlv) {
+                  delete iebk.ctrlv
+                  return
+                }
+                setTimeout(function() {
+                  iebk.start = me.document.getElementById(startId)
+                  if (!iebk.start) {
+                    return
+                  }
+                  var div = me.document.createElement( 'div' )
+                  , range = me.selection.getRange()
+                  iebk.end = range.createBookmark().start
+                  range.moveToBookmark( iebk )
+                  range.enlarge()
+                  div.appendChild(range.extractContents())
+                  filter(div)
+                }, 0)
+              })
+            }
 
         });
 
