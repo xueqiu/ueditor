@@ -639,6 +639,45 @@
             return this;
         },
         /**
+         * 获取光标相对于文档的定位
+         * @public
+         * @function
+         * @name    baidu.editor.dom.Range.getCursorPosition
+         * @param {Boolean}   start    true：是否返回 range 开始处的位置
+         * @param {Boolean}   end      true：是否返回 range 结束处的位置，range.collapsed 则与 start 相同
+         * @returns {Object} 位置对象， result.start.x/y result.end.x/y 获取开始，结束的位置
+         */
+        getCursorPosition : function( start, end ) {
+            start = start !== false
+            end = end !== false
+            var startNode = this.document.createElement( 'span' ),
+                result = {},
+                endNode, bk;
+
+            startNode.appendChild( this.document.createTextNode( browser.ie ? '&nbsp;' : '\u200B' ));
+
+            this.insertNode( startNode );
+            result.start = domUtils.getXY( startNode );
+
+            if ( end ) {
+                if ( !this.collapsed ) {
+                    endNode = startNode.cloneNode( true );
+                    bk = this.createBookmark()
+                    this.collapse( false ).insertNode( endNode );
+                    result.end = domUtils.getXY( endNode );
+                    domUtils.remove( endNode );
+                    this.moveToBookmark( bk );
+                } else {
+                    result.end = result.start
+                }
+            }
+
+            if ( !start ) delete result.start
+            domUtils.remove( startNode );
+
+            return result
+        },
+        /**
          * 调整边界到一个block元素上，或者移动到最大的位置
          * @public
          * @function
