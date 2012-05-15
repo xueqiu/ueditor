@@ -256,7 +256,7 @@
                 node = this.serialize.transformOutput(node);
                 html = this.serialize.toHTML(node);
             }
-            return html;
+            return html.replace(/\u200B<img/gi, '<img'); // 配合 fiximgclick_xueqiu.js 插件去除 img 前的占位符
         },
 
         /**
