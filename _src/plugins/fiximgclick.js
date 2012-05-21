@@ -77,7 +77,7 @@ UE.plugins['fiximgclick'] = function() {
         if (range.endOffset - range.startOffset === 1) {
           if (range.startContainer.nodeType === 1) {
             var selElm = range.startContainer.childNodes[range.startOffset]
-            if (selElm.tagName === 'IMG') {
+            if (selElm && selElm.nodeType === 1 && selElm.tagName === 'IMG') {
               selectImg(selElm)
               return
             }
