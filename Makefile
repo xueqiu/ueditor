@@ -11,7 +11,6 @@ src = _src/editor_seajs_start.js\
 	  _src/plugins/fiximgclick.js\
 	  _src/plugins/removeformat.js\
 	  _src/plugins/font.js\
-	  _src/plugins/undo.js\
 	  _src/plugins/enterkey.js\
 	  _src/plugins/basestyle.js\
 	  _src/plugins/inserthtml.js\
