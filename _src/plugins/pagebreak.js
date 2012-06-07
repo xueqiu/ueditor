@@ -9,16 +9,7 @@
 UE.plugins['pagebreak'] = function () {
     var me = this,
         notBreakTags = ['td'];
-    //重写了Editor.hasContents
-//    var hasContentsOrg = me.hasContents;
-//    me.hasContents = function (tags) {
-//        for (var i = 0, di, divs = me.document.getElementsByTagName('div'); di = divs[i++];) {
-//            if (domUtils.hasClass(di, 'pagebreak')) {
-//                return true;
-//            }
-//        }
-//        return hasContentsOrg.call(me, tags);
-//    };
+
     function fillNode(node){
         if(domUtils.isEmptyBlock(node)){
             var firstChild = node.firstChild,tmpNode;
@@ -75,7 +66,7 @@ UE.plugins['pagebreak'] = function () {
                 if (!range.collapsed) {
                     range.deleteContents();
                     var start = range.startContainer;
-                    while (domUtils.isBlockElm(start) && domUtils.isEmptyNode(start)) {
+                    while ( !domUtils.isBody(start) && domUtils.isBlockElm(start) && domUtils.isEmptyNode(start)) {
                         range.setStartBefore(start).collapse(true);
                         domUtils.remove(start);
                         start = range.startContainer;
@@ -98,7 +89,7 @@ UE.plugins['pagebreak'] = function () {
                 if(isHr(pre)){
                     domUtils.remove(pre)
                 }else{
-                    fillNode(pre);
+                    pre && fillNode(pre);
                 }
 
                 if(!nextNode){

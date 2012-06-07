@@ -311,6 +311,50 @@
             return this.setEnd( node.parentNode, domUtils.getNodeIndex( node ) + 1 );
         },
         /**
+         * 将开始设置到node的最开始位置  <element>^text</element>
+         * @public
+         * @function
+         * @name    baidu.editor.dom.Range.setEndAfter
+         * @param    {Node}     node     节点
+         * @return   {Range}    返回Range
+         */
+        setStartAtFirst : function(node){
+            return this.setStart(node,0)
+        },
+        /**
+         * 将开始设置到node的最开始位置  <element>text^</element>
+         * @public
+         * @function
+         * @name    baidu.editor.dom.Range.setEndAfter
+         * @param    {Node}     node     节点
+         * @return   {Range}    返回Range
+         */
+        setStartAtLast : function(node){
+            return this.setStart(node,node.nodeType == 3 ? node.nodeValue.length : node.childNodes.length)
+        },
+        /**
+         * 将结束设置到node的最开始位置  <element>^text</element>
+         * @public
+         * @function
+         * @name    baidu.editor.dom.Range.setEndAfter
+         * @param    {Node}     node     节点
+         * @return   {Range}    返回Range
+         */
+        setEndAtFirst : function(node){
+            return this.setEnd(node,0)
+        },
+        /**
+         * 将结束设置到node的最开始位置  <element>text^</element>
+         * @public
+         * @function
+         * @name    baidu.editor.dom.Range.setEndAfter
+         * @param    {Node}     node     节点
+         * @return   {Range}    返回Range
+         */
+        setEndAtLast : function(node){
+            return this.setEnd(node,node.nodeType == 3 ? node.nodeValue.length : node.childNodes.length)
+        },
+        /**
          * 将结束点位置设置到node前
          * @public
          * @function

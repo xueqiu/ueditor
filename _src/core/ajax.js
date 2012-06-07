@@ -53,7 +53,7 @@ UE.ajax = function() {
             }, ajaxOpts.timeout);
 
 			var method = ajaxOpts.method.toUpperCase();
-            var str = url + (url.indexOf("?")==-1?"?":"&") + (method=="POST"?"":submitStr) + "&noCache=" + +new Date;
+            var str = url + (url.indexOf("?")==-1?"?":"&") + (method=="POST"?"":submitStr+ "&noCache=" + +new Date);
 			ajaxRequest.open(method, str, ajaxOpts.async);
 			ajaxRequest.onreadystatechange = function() {
 				if (ajaxRequest.readyState == 4) {

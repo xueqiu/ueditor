@@ -76,8 +76,14 @@
         range.removeInlineStyle( 'a' );
         if ( range.collapsed ) {
             var a = range.document.createElement( 'a' );
+            if(opt.textValue){
+                a.innerHTML = opt.textValue;
+                delete opt.textValue;
+            }else{
+                a.innerHTML = opt.href;
+            }
             domUtils.setAttributes( a, opt );
-            a.innerHTML = opt.href;
+
             range.insertNode( a ).selectNode( a );
         } else {
             range.applyInlineStyle( 'a', opt )

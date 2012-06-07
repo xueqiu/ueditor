@@ -7,8 +7,6 @@
 ///import core/dom/Selection.js
 ///import core/dom/dtd.js
 (function () {
-
-
     var uid = 0,
         _selectionChangeTimer;
 
@@ -29,7 +27,7 @@
             }
          }
 
-     }
+    }
 
     /**
      * 编辑器类
@@ -44,7 +42,25 @@
         me.uid = uid ++;
         EventBase.call( me );
         me.commands = {};
-        me.options = utils.extend( options || {}, UEDITOR_CONFIG, true );
+        me.options = utils.extend( options || {},
+            UEDITOR_CONFIG, true );
+        //设置默认的常用属性
+        me.setOpt({
+            isShow : true,
+            initialContent:'欢迎使用ueditor!',
+            autoClearinitialContent:false,
+            iframeCssUrl: me.options.UEDITOR_HOME_URL + '/themes/default/iframe.css',
+            textarea:'editorValue',
+            focus:false,
+            minFrameHeight:320,
+            autoClearEmptyNode : true,
+            fullscreen : false,
+            readonly : false,
+            zIndex : 999,
+            imagePopup:true,
+            enterTag:'p',
+            pageBreakTag : '_baidu_page_break_tag_'
+        });
         //初始化插件
         for ( var pi in UE.plugins ) {
             UE.plugins[pi].call( me )
@@ -52,10 +68,24 @@
     };
     Editor.prototype = /**@lends baidu.editor.Editor.prototype*/{
 
+        setOpt : function(key,val){
+            var obj = {};
+            if(utils.isString(key)){
+                obj[key] = val
+            }else{
+                obj = key;
+            }
+            utils.extend(this.options,obj,true);
+        },
         destroy : function(){
-            this.fireEvent('destroy');
-            this.container.innerHTML = '';
-            domUtils.remove(this.container);
+            var me = this;
+            me.fireEvent('destroy');
+            me.container.innerHTML = '';
+            domUtils.remove(me.container);
+            //trace:2004
+            for(var p in me){
+                delete this[p]
+            }
 
         },
         /**
@@ -77,18 +107,35 @@
         },
 
         _setup: function ( doc ) {
-            var options = this.options,
-                me = this;
+            var me = this, options = me.options;
             //防止在chrome下连接后边带# 会跳动的问题
             !browser.webkit && doc.open();
             var useBodyAsViewport = ie && browser.version < 9;
             doc.write( ( ie && browser.version < 9 ? '' : '<!DOCTYPE html>') +
                 '<html xmlns="http://www.w3.org/1999/xhtml"' + (!useBodyAsViewport ? ' class="view"' : '')  + '><head>' +
-                ( options.iframeCssUrl ? '<link rel="stylesheet" type="text/css" href="' + utils.unhtml( /^http/.test(options.iframeCssUrl) ? options.iframeCssUrl : (options.UEDITOR_HOME_URL + options.iframeCssUrl) ) + '"/>' : '' ) +
-                '<style type="text/css">'
+                ( options.iframeCssUrl ? '<link rel="stylesheet" type="text/css" href="' + utils.unhtml( options.iframeCssUrl ) + '"/>' : '' ) +
+                '<style id="editorinitialstyle" type="text/css">' +
+                //这些默认属性不能够让用户改变
+                //选中的td上的样式
+                '.selectTdClass{background-color:#3399FF !important}' +
+                //插入的表格的默认样式
+                'table{clear:both;margin-bottom:10px;border-collapse:collapse;word-break:break-all;}' +
+                //分页符的样式
+                '.pagebreak{display:block;clear:both !important;cursor:default !important;width: 100% !important;margin:0;}' +
+                //锚点的样式,注意这里背景图的路径
+                '.anchorclass{background: url("' + me.options.UEDITOR_HOME_URL + 'themes/default/images/anchor.gif") no-repeat scroll left center transparent;border: 1px dotted #0000FF;cursor: auto;display: inline-block;height: 16px;width: 15px;}' +
+                //设置四周的留边
+                '.view{padding:0;word-wrap:break-word;cursor:text;height:100%;}\n' +
+                //设置默认字体和字号
+                'body{margin:8px;font-family:"宋体";font-size:16px;}' +
+                //针对li的处理
+                'li{clear:both}' +
+                //设置段落间距
+                'p{margin:5px 0;}'
                 + ( options.initialStyle ||' ' ) +
                 '</style></head><body' + (useBodyAsViewport ? ' class="view"' : '')  + '></body></html>' );
             !browser.webkit && doc.close();
+
             if ( ie ) {
                 doc.body.disabled = true;
                 doc.body.contentEditable = true;
@@ -97,41 +144,50 @@
                 doc.body.contentEditable = true;
                 doc.body.spellcheck = false;
             }
-            this.document = doc;
-            this.window = doc.defaultView || doc.parentWindow;
 
-            this.iframe = this.window.frameElement;
-            this.body = doc.body;
-            if (this.options.minFrameHeight) {
-                this.setHeight(this.options.minFrameHeight);
-                this.body.style.height = this.options.minFrameHeight;
-            }
-            this.selection = new dom.Selection( doc );
+
+            me.document = doc;
+            me.window = doc.defaultView || doc.parentWindow;
+
+            me.iframe = me.window.frameElement;
+            me.body = doc.body;
+
+            //设置编辑器最小高度
+            var height = options.minFrameHeight;
+            me.setHeight(height);
+            me.body.style.height = height + 'px';
+
+            me.selection = new dom.Selection( doc );
             //gecko初始化就能得到range,无法判断isFocus了
             if(browser.gecko){
                 this.selection.getNative().removeAllRanges();
             }
             this._initEvents();
-            if(me.options.initialContent){
-                if(me.options.autoClearinitialContent){
+            if(options.initialContent){
+                if(options.autoClearinitialContent){
                     var oldExecCommand = me.execCommand;
                     me.execCommand = function(){
                         me.fireEvent('firstBeforeExecCommand');
                         oldExecCommand.apply(me,arguments)
                     };
-                    this.setDefaultContent(this.options.initialContent);
+                    this.setDefaultContent(options.initialContent);
                 }else
-                    this.setContent(this.options.initialContent,true);
+                    this.setContent(options.initialContent,true);
             }
             //为form提交提供一个隐藏的textarea
             for(var form = this.iframe.parentNode;!domUtils.isBody(form);form = form.parentNode){
 
                 if(form.tagName == 'FORM'){
                     domUtils.on(form,'submit',function(){
+                        for(var textarea,i= 0,ti,tis=domUtils.getElementsByTagName(form,'textarea');ti=tis[i++];){
+                            if(ti.id == 'ueditor_textarea_' + me.options.textarea){
+                                textarea = ti;
+                                break;
+                            }
 
-                        var textarea = document.getElementById('ueditor_textarea_' + me.options.textarea);
+                        }
 
-                        if(!textarea){
+                        if(!textarea ){
                             textarea = document.createElement('textarea');
                             textarea.setAttribute('name',me.options.textarea);
                             textarea.id = 'ueditor_textarea_' + me.options.textarea;
@@ -146,10 +202,10 @@
             }
             //编辑器不能为空内容
             if(domUtils.isEmptyNode(me.body)){
-                this.body.innerHTML = '<p>'+(browser.ie?'':'<br/>')+'</p>';
+                me.body.innerHTML = '<p>'+(browser.ie?'':'<br/>')+'</p>';
             }
             //如果要求focus, 就把光标定位到内容开始
-            if(me.options.focus){
+            if(options.focus){
                 setTimeout(function(){
                     me.focus();
                     //如果自动清除开着，就不需要做selectionchange;
@@ -159,14 +215,14 @@
 
             }
 
-            if(!this.container){
-                this.container = this.iframe.parentNode;
+            if(!me.container){
+                me.container = this.iframe.parentNode;
             }
 
-            if(me.options.fullscreen && me.ui){
+            if(options.fullscreen && me.ui){
                 me.ui.setFullScreen(true)
             }
-            this.fireEvent( 'ready' );
+            me.fireEvent( 'ready' );
             if(!browser.ie){
                 domUtils.on(me.window,'blur',function(){
                     me._bakRange = me.selection.getRange();
@@ -186,6 +242,10 @@
                 },100)
             }
 
+            !options.isShow && me.setHide();
+
+            options.readonly && me.setDisabled();
+
         },
         /**
          * 创建textarea,同步编辑的内容到textarea,为后台获取内容做准备
@@ -198,7 +258,13 @@
             var me = this,
                 form;
             function setValue(form){
-                var textarea = document.getElementById('ueditor_textarea_' + me.options.textarea);
+                for(var textarea,i= 0,ti,tis=domUtils.getElementsByTagName(form,'textarea');ti=tis[i++];){
+                    if(ti.id == 'ueditor_textarea_' + me.options.textarea){
+                        textarea = ti;
+                        break;
+                    }
+
+                }
 
                 if(!textarea){
                     textarea = document.createElement('textarea');
@@ -207,7 +273,7 @@
                     textarea.style.display = 'none';
                     form.appendChild(textarea);
                 }
-                textarea.value = me.getContent();
+                textarea.value = me.getContent()
             }
             if(formId){
                 form = document.getElementById(formId);
@@ -245,18 +311,50 @@
          * @function
          * @returns {String}
          */
-        getContent : function (cmd) {
+        getContent : function (cmd,fn) {
+            if( cmd && utils.isFunction(cmd)){
+                fn = cmd;
+                cmd = '';
+            }
+            if(fn ? !fn():!this.hasContents())
+                return '';
+
             this.fireEvent( 'beforegetcontent',cmd );
             var reg = new RegExp( domUtils.fillChar, 'g' ),
                 //ie下取得的html可能会有\n存在，要去掉，在处理replace(/[\t\r\n]*/g,'');代码高量的\n不能去除
-                html = this.document.body.innerHTML.replace(reg,'').replace(/>[\t\r\n]*?</g,'><');
+                html = this.body.innerHTML.replace(reg,'').replace(/>[\t\r\n]*?</g,'><');
             this.fireEvent( 'aftergetcontent',cmd );
             if (this.serialize) {
                 var node = this.serialize.parseHTML(html);
                 node = this.serialize.transformOutput(node);
                 html = this.serialize.toHTML(node);
             }
-            return html;
+            //多个&nbsp;要转换成空格加&nbsp;的形式，要不预览时会所成一个
+            return html.replace(/(&nbsp;)+/g,function(s){
+                for(var i= 0,str = [],l= s.split(';').length-1;i<l;i++){
+                    str.push(i%2 == 0?' ':'&nbsp;')
+                }
+                return str.join('');
+            })
+        },
+
+        /**
+         * 得到编辑器的纯文本内容，但会保留段落格式
+         * @public
+         * @function
+         * @returns {String}
+         */
+        getPlainTxt : function(){
+            var reg = new RegExp( domUtils.fillChar,'g' ),
+                html = this.body.innerHTML.replace(/[\n\r]/g,'');//ie要先去了\n在处理
+            html = html.replace(/<(p|div)[^>]*>(<br\/?>|&nbsp;)<\/\1>/gi,'\n')
+                       .replace(/<br\/?>/gi,'\n')
+                       .replace(/<[^>/]+>/g,'')
+                       .replace(/(\n)?<\/([^>]+)>/g,function(a,b,c){
+                            return dtd.$block[c] ? '\n' : b ? b : '';
+                        });
+            //取出来的空格会有c2a0会变成乱码，处理这种情况\u00a0
+            return html.replace(reg,'').replace(/\u00a0/g,' ').replace(/&nbsp;/g,' ')
         },
 
         /**
@@ -267,7 +365,8 @@
          */
         getContentTxt : function(){
             var reg = new RegExp( domUtils.fillChar,'g' );
-            return this.body[browser.ie ? 'innerText':'textContent'].replace(reg,'')
+            //取出来的空格会有c2a0会变成乱码，处理这种情况\u00a0
+            return this.body[browser.ie ? 'innerText':'textContent'].replace(reg,'').replace(/\u00a0/g,' ')
         },
 
         /**
@@ -305,43 +404,44 @@
             //去掉了\t\n\r 如果有插入的代码，在源码切换所见即所得模式时，换行都丢掉了
             //\r在ie下的不可见字符，在源码切换时会变成多个&nbsp;
             //trace:1559
-            this.document.body.innerHTML = html.replace(new RegExp('[\r' + domUtils.fillChar + ']*','g'),'');
+            this.body.innerHTML = html.replace(new RegExp('[\r' + domUtils.fillChar + ']*','g'),'');
 
 
             //处理ie6下innerHTML自动将相对路径转化成绝对路径的问题
-            if(browser.ie && browser.version < 7 && me.options.relativePath){
+            if(browser.ie && browser.version < 7 ){
                 replaceSrc(this.document.body);
             }
 
             //给文本或者inline节点套p标签
             if(me.options.enterTag == 'p'){
-                var child = this.body.firstChild,
-                    p = me.document.createElement('p'),
-                    tmpNode;
-                if(!child || child.nodeType == 1 && dtd.$cdata[child.tagName]){
+                var child = this.body.firstChild,tmpNode;
+                if(!child || child.nodeType == 1 &&
+                    (dtd.$cdata[child.tagName] ||
+                          domUtils.isCustomeNode(child)
+                    )
+                    && child === this.body.lastChild){
                     this.body.innerHTML = '<p>'+(browser.ie ? '' :'<br/>')+'</p>' + this.body.innerHTML;
                 }else{
+                    var p = me.document.createElement('p');
                      while(child){
-                        if(child.nodeType ==3 || child.nodeType == 1 && dtd.p[child.tagName]){
+                        while(child && (child.nodeType ==3 || child.nodeType == 1 && dtd.p[child.tagName] && !dtd.$cdata[child.tagName])){
                             tmpNode = child.nextSibling;
-
                             p.appendChild(child);
                             child = tmpNode;
+                        }
+                        if(p.firstChild){
                             if(!child){
                                 me.body.appendChild(p);
-                            }
-                        }else{
-                            if(p.firstChild){
+                                break;
+                            }else{
                                 me.body.insertBefore(p,child);
-                                p = me.document.createElement('p')
-
-
+                                p = me.document.createElement('p');
                             }
-                            child = child.nextSibling
                         }
-
+                        child = child.nextSibling;
 
                     }
+
                 }
 
 
@@ -365,7 +465,10 @@
          * @function
          */
         focus : function () {
-            this.selection.getRange().select(true);
+            try{
+                this.selection.getRange().select(true);
+            }catch(e){}
+
         },
 
          /**
@@ -585,7 +688,16 @@
             if(!domUtils.isEmptyBlock(this.body)){
                 return true
             }
-
+            //随时添加,定义的特殊标签如果存在，不能认为是空
+            tags = ['div'];
+            for(i= 0;ci=tags[i++];){
+                var nodes = domUtils.getElementsByTagName(this.document,ci);
+                for(var n= 0,cn;cn=nodes[n++];){
+                    if(domUtils.isCustomeNode(cn)){
+                        return true;
+                    }
+                }
+            }
             return false;
         },
         /**
@@ -595,6 +707,47 @@
          */
         reset : function(){
             this.fireEvent('reset');
+        },
+        /**
+         * 设置编辑区域可以编辑
+         */
+        setEnabled : function(exclude){
+            var me = this,range;
+            me.body.contentEditable = true;
+            range = me.selection.getRange();
+            //有可能内容丢失了
+            try{
+                range.moveToBookmark(me.lastBk);
+                delete me.lastBk
+            }catch(e){
+                range.setStartAtFirst(me.body).collapse(true)
+            }
+            range.select(true);
+            if(me.bkqueryCommandState){
+                me.queryCommandState = me.bkqueryCommandState;
+                delete me.bkqueryCommandState;
+            }
+
+            me.fireEvent( 'selectionchange');
+        },
+        /**
+         * 设置编辑区域不可以编辑
+         */
+        setDisabled : function(exclude){
+            var me = this;
+            exclude = exclude ? utils.isArray(exclude) ? exclude : [exclude] : [];
+            me.lastBk = me.selection.getRange().createBookmark(true);
+            me.body.contentEditable = false;
+            me.bkqueryCommandState = me.queryCommandState;
+            me.queryCommandState =function(type){
+                if(utils.indexOf(exclude,type)!=-1){
+                    me.bkqueryCommandState.apply(me,arguments)
+                }
+
+                return -1;
+            };
+            me.fireEvent( 'selectionchange');
+
         },
         /**
          * 设置默认内容
@@ -622,7 +775,7 @@
             return function (cont){
                 var me = this;
                 me.document.body.innerHTML = '<p id="initContent">'+cont+'</p>';
-                if(browser.ie && browser.version < 7 && me.options.relativePath){
+                if(browser.ie && browser.version < 7){
                     replaceSrc(me.document.body);
                 }
                 me.addListener('firstBeforeExecCommand',clear);
@@ -630,7 +783,36 @@
             }
 
 
-        }()
+        }(),
+        /**
+         * 设置编辑器显示
+         * @function
+         */
+        setShow : function(){
+            var me = this,
+                range = me.selection.getRange();
+            if(me.container.style.display == 'none'){
+                //有可能内容丢失了
+                try{
+                    range.moveToBookmark(me.lastBk);
+                    delete me.lastBk
+                }catch(e){
+                    range.setStartAtFirst(me.body).collapse(true)
+                }
+                range.select(true);
+                me.container.style.display  = '';
+            }
+
+        },
+        /**
+         * 设置编辑器隐藏
+         * @function
+         */
+        setHide : function(){
+            var me = this;
+            me.lastBk = me.selection.getRange().createBookmark(true);
+            me.container.style.display = 'none'
+        }
 
     };
     utils.inherits( Editor, EventBase );

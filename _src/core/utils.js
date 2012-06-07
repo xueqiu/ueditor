@@ -33,7 +33,7 @@
 		extend: function(t, s, b) {
 			if (s) {
 				for (var k in s) {
-					if (!b || ! t.hasOwnProperty(k)) {
+					if (!b || !t.hasOwnProperty(k)) {
 						t[k] = s[k];
 					}
 				}
@@ -253,6 +253,11 @@
             }
             return true;
         },
+        isFunction : function (source) {
+            // chrome下,'function' == typeof /a/ 为true.
+            return '[object Function]' == Object.prototype.toString.call(source);
+        },
+
         fixColor : function (name, value) {
             if (/color/i.test(name) && /rgba?/.test(value)) {
                 var array = value.split(",");
@@ -319,8 +324,54 @@
                     return b ? b + ";;" : ';'
                 })
 
-        }
+        },
+        /**
+         * DOMContentLoaded 事件注册
+         * @public
+         * @function
+         * @param {Function} 触发的事件
+         */
+        domReady : function (){
+            var isReady = false,
+                fnArr = [];
+            function doReady(){
+                //确保onready只执行一次
+                isReady = true;
+                for(var ci;ci=fnArr.pop();){
+                   ci();
+                }
+            }
+            return function(onready){
+                onready && fnArr.push(onready);
+
+                isReady && doReady();
+
+
+                if( browser.ie ){
+                    (function(){
+                        if ( isReady ) return;
+                        try {
+                            document.documentElement.doScroll("left");
+                        } catch( error ) {
+                            setTimeout( arguments.callee, 0 );
+                            return;
+                        }
+                        doReady();
+                    })();
+                    window.attachEvent('onload',doReady);
+                }else{
+                    document.addEventListener( "DOMContentLoaded", function(){
+                        document.removeEventListener( "DOMContentLoaded", arguments.callee, false );
+                        doReady();
+                    }, false );
+
+                }
+            }
+
+
+        }()
 
 	};
 
 
+    utils.domReady();

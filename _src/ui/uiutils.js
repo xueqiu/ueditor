@@ -6,7 +6,7 @@
     var root = window[magic] = {};
     var uidMagic = 'ID' + magic;
     var uidCount = 0;
-    
+
     var uiUtils = baidu.editor.ui.uiUtils = {
         uid: function (obj){
             return (obj ? obj[uidMagic] || (obj[uidMagic] = ++ uidCount) : ++ uidCount);
@@ -48,7 +48,13 @@
                 document.body : document.documentElement;
         },
         getClientRect: function (element){
-            var bcr = element.getBoundingClientRect();
+            var bcr;
+            //trace  IE6下在控制编辑器显隐时可能会报错，catch一下
+            try{
+                bcr = element.getBoundingClientRect();
+            }catch(e){
+                bcr={left:0,top:0,height:0,width:0}
+            }
             var rect = {
                 left: Math.round(bcr.left),
                 top: Math.round(bcr.top),
@@ -166,10 +172,12 @@
                 function handleMouseUp(evt){
                     doc.removeEventListener('mousemove', handleMouseMove, true);
                     doc.removeEventListener('mouseup', handleMouseMove, true);
+                    window.removeEventListener('mouseup', handleMouseUp, true);
                     callbacks.ondragstop();
                 }
                 doc.addEventListener('mousemove', handleMouseMove, true);
                 doc.addEventListener('mouseup', handleMouseUp, true);
+                window.addEventListener('mouseup', handleMouseUp, true);
                 evt.preventDefault();
             } else {
                 var elm = evt.srcElement;

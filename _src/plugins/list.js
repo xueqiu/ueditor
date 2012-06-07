@@ -26,6 +26,20 @@
                 'PRE':1,
                 'BLOCKQUOTE':1
             };
+        me.setOpt({
+            'insertorderedlist':[
+                ['1,2,3...','decimal'],
+                ['a,b,c...','lower-alpha'],
+                ['i,ii,iii...','lower-roman'],
+                ['A,B,C','upper-alpha'],
+                ['I,II,III...','upper-roman']
+            ],
+            'insertunorderedlist':[
+                ['○ 小圆圈','circle'],
+                ['● 小圆点','disc'],
+                ['■ 小方块','square']
+            ]
+        });
         function adjustList(list,tag,style){
             var nextList = list.nextSibling;
             if(nextList && nextList.nodeType == 1 && nextList.tagName.toLowerCase() == tag && (domUtils.getStyle(nextList,'list-style-type')||(tag == 'ol'?'decimal' : 'disc')) == style){

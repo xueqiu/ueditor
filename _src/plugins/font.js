@@ -9,9 +9,9 @@
  * @param {String}     cmdName    执行的功能名称
  * @param {String}    value             传入的值
  */
-(function() {
-
-    var fonts = {
+UE.plugins['font'] = function() {
+    var me = this,
+        fonts = {
             'forecolor':'color',
             'backcolor':'background-color',
             'fontsize':'font-size',
@@ -19,8 +19,21 @@
             'underline':'text-decoration',
             'strikethrough':'text-decoration'
         };
-
-
+    me.setOpt({
+        'fontfamily':[
+            ['宋体',['宋体', 'SimSun']],
+            ['楷体',['楷体', '楷体_GB2312', 'SimKai']],
+            ['黑体',['黑体', 'SimHei']],
+            ['隶书',['隶书', 'SimLi']],
+            ['andale mono',['andale mono']],
+            ['arial',['arial', 'helvetica', 'sans-serif']],
+            ['arial black',['arial black', 'avant garde']],
+            ['comic sans ms',['comic sans ms']],
+            ['impact',['impact', 'chicago']],
+            ['times new roman',['times new roman']]
+        ],
+        'fontsize':[10, 11, 12, 14, 16, 18, 20, 24, 36]
+    });
 
     for ( var p in fonts ) {
         (function( cmd, style ) {
@@ -161,4 +174,4 @@
     }
 
 
-})();
+};

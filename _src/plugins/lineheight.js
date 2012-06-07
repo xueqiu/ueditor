@@ -12,6 +12,7 @@
  */
 UE.plugins['lineheight'] = function(){
     var me = this;
+    me.setOpt({'lineheight':['1', '1.5','1.75','2', '3', '4', '5']});
     me.commands['lineheight'] =  {
         execCommand : function( cmdName,value ) {
             this.execCommand('paragraph','p',{style:'line-height:'+ (value == "1" ? "normal" : value + 'em') });

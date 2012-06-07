@@ -160,7 +160,11 @@
          */
         getNative : function () {
             var doc = this.document;
-            return !doc ? null : ie ? doc.selection : domUtils.getWindow( doc ).getSelection();
+            try{
+                return !doc ? null : ie ? doc.selection : domUtils.getWindow( doc ).getSelection();
+            }catch(e){
+                return null;
+            }
         },
 
 
@@ -220,7 +224,12 @@
          * 编辑器是否得到了选区
          */
         isFocus : function(){
-            return browser.ie  && _getIERange(this) || !browser.ie &&  this.getNative().rangeCount ? true : false;
+            try{
+                return browser.ie  && _getIERange(this) || !browser.ie &&  this.getNative().rangeCount ? true : false;
+            }catch(e){
+                return false;
+            }
+
         },
         /**
          * 获取选区对应的Range
@@ -343,11 +352,10 @@
          * @return  {String}    选区中包含的文本
          */
         getText : function(){
-            if(this.isFocus()){
-                var nativeSel = this.getNative(),
-                    nativeRange = browser.ie ? nativeSel.createRange() : nativeSel.getRangeAt(0);
-
-                return nativeRange.text || nativeRange.toString();
+            var nativeSel,nativeRange;
+            if(this.isFocus() && (nativeSel = this.getNative())){
+                nativeRange = browser.ie ? nativeSel.createRange() : nativeSel.getRangeAt(0);
+                return browser.ie ? nativeRange.text : nativeRange.toString();
             }
             return '';
         }

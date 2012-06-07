@@ -206,10 +206,10 @@
         var formatter = new SourceFormater(opt.source);
         var sourceMode = false;
         var sourceEditor;
+        opt.sourceEditor = opt.sourceEditor || 'codemirror';
 
         function createSourceEditor(holder){
-            var useCodeMirror = opt.sourceEditor == 'codemirror' && window.CodeMirror;
-            return sourceEditors[useCodeMirror ? 'codemirror' : 'textarea'](me, holder);
+            return sourceEditors[opt.sourceEditor == 'codemirror' && window.CodeMirror ? 'codemirror' : 'textarea'](me, holder);
         }
 
         var bakCssText;
@@ -320,10 +320,10 @@
                 return oldGetContent.apply(this, arguments)
             }
         };
-        me.addListener("ready",function(){
-            if(opt.sourceEditor == "codemirror"){
+        if(opt.sourceEditor == "codemirror"){
+            me.addListener("ready",function(){
                 utils.loadFile(document,{
-                    src : opt.codeMirrorJsUrl,
+                    src : opt.codeMirrorJsUrl || opt.UEDITOR_HOME_URL + "third-party/codemirror2.15/codemirror.js",
                     tag : "script",
                     type : "text/javascript",
                     defer : "defer"
@@ -332,10 +332,12 @@
                     tag : "link",
                     rel : "stylesheet",
                     type : "text/css",
-                    href : opt.codeMirrorCssUrl
+                    href : opt.codeMirrorCssUrl || opt.UEDITOR_HOME_URL + "third-party/codemirror2.15/codemirror.css"
                 });
-            }
-        });
+
+            });
+        }
+
     };
 
 })();
