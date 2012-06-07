@@ -10,6 +10,29 @@ UE.plugins = {};
 
 UE.commands = {};
 
-UE.version = "1.2.0.0";
+//UE.defaultplugins = {};
+//
+//UE.commands = function(){
+//    var commandList = {},tmpList= {};
+//    return {
+//
+//        register : function(commandsName,pluginName){
+//            commandsName = commandsName.split(',');
+//            for(var i= 0,ci;ci=commandsName[i++];){
+//                commandList[ci] = pluginName;
+//            }
+//
+//        },
+//        get : function(commandName){
+//            return commandList[commandName];
+//        },
+//        getList : function(){
+//            return commandList;
+//        }
+//    }
+//}();
+
+
+UE.version = "1.2.1.0";
 
 var dom = UE.dom = {};

@@ -70,6 +70,7 @@ UE.plugins['table'] = function() {
             clearSelectedTd(me.currentSelectedArr)
         }
     });
+
     me.addListener('mouseup', function() {
 
         anchorTd = null;
@@ -1264,7 +1265,7 @@ UE.plugins['table'] = function() {
         for (var i = cellsRange.beginRowIndex; i <= cellsRange.endRowIndex; i++) {
             for (var j = cellsRange.beginCellIndex; j <= cellsRange.endCellIndex; j++) {
                 var td = rows[i].cells[j];
-                td.className = me.options.selectedTdClass;
+                td.className ="selectTdClass";
                 me.currentSelectedArr.push(td);
             }
         }

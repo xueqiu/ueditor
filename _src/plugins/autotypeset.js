@@ -9,10 +9,22 @@
  */
 
 UE.plugins['autotypeset'] = function(){
-    //升级了版本，但配置项目里没有autotypeset
-    if(!this.options.autotypeset){
-        return;
-    }
+
+    this.setOpt({'autotypeset':{
+        mergeEmptyline : true,          //合并空行
+            removeClass : true,            //去掉冗余的class
+            removeEmptyline : false,        //去掉空行
+            textAlign : "left",             //段落的排版方式，可以是 left,right,center,justify 去掉这个属性表示不执行排版
+            imageBlockLine : 'center',      //图片的浮动方式，独占一行剧中,左右浮动，默认: center,left,right,none 去掉这个属性表示不执行排版
+            pasteFilter : false,             //根据规则过滤没事粘贴进来的内容
+            clearFontSize : false,           //去掉所有的内嵌字号，使用编辑器默认的字号
+            clearFontFamily : false,         //去掉所有的内嵌字体，使用编辑器默认的字体
+            removeEmptyNode : false,         // 去掉空节点
+            //可以去掉的标签
+            removeTagNames : utils.extend({div:1},dtd.$removeEmpty),
+            indent : false,                  // 行首缩进
+            indentValue : '2em'             //行首缩进的大小
+    }});
     var me = this,
         opt = me.options.autotypeset,
         remainClass = {
@@ -28,6 +40,10 @@ UE.plugins['autotypeset'] = function(){
             p:1
         },
         highlightCont;
+    //升级了版本，但配置项目里没有autotypeset
+    if(!opt){
+        return;
+    }
     function isLine(node,notEmpty){
 
         if(node && node.parentNode && tags[node.tagName.toLowerCase()]){

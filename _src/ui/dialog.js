@@ -10,7 +10,15 @@
         UIBase = baidu.editor.ui.UIBase,
         Button = baidu.editor.ui.Button,
         Dialog = baidu.editor.ui.Dialog = function (options){
-            this.initOptions(options);
+            this.initOptions(utils.extend({
+                autoReset: true,
+                draggable: true,
+                onok: function (){},
+                oncancel: function (){},
+                onclose: function (t, ok){
+                    return ok ? this.onok() : this.oncancel();
+                }
+            },options));
             this.initDialog();
         };
     var modalMask;
@@ -91,7 +99,7 @@
             if (typeof this.content == 'string') {
                 contentHtml = this.content;
             } else if (this.iframeUrl) {
-                contentHtml = '<iframe id="'+ this.id +
+                contentHtml = '<span id="'+ this.id +'_contmask" class="dialogcontmask"></span><iframe id="'+ this.id +
                     '_iframe" class="%%-iframe" height="100%" width="100%" frameborder="0" src="'+ this.iframeUrl +'"></iframe>';
             }
             return contentHtml;
@@ -165,7 +173,7 @@
                 uiUtils.startDrag(evt, {
                     ondragstart: function (){
                         rect = uiUtils.getClientRect(me.getDom());
-
+                        me.getDom('contmask').style.visibility = 'visible';
                         me.dragMask.show(me.getDom().style.zIndex - 1);
                     },
                     ondragmove: function (x, y){
@@ -177,6 +185,7 @@
                         });
                     },
                     ondragstop: function (){
+                        me.getDom('contmask').style.visibility = 'hidden';
                         domUtils.removeClasses(me.getDom(), ['edui-state-centered']);
                         me.dragMask.hide();
                     }
@@ -209,7 +218,13 @@
         },
         open: function (){
             if (this.autoReset) {
-                this.reset();
+                //有可能还没有渲染
+                try{
+                    this.reset();
+                }catch(e){
+                    this.render();
+                    this.open()
+                }
             }
             this.showAtCenter();
             if (this.iframeUrl) {

@@ -11,8 +11,9 @@
  * @param   {String}   attrs               标签的属性
  * @author zhanyi
  */
-(function() {
-    var block = domUtils.isBlockElm,
+UE.plugins['paragraph'] = function() {
+    var me = this,
+        block = domUtils.isBlockElm,
         notExchange = ['TD','LI','PRE'],
 
         doParagraph = function(range,style,attrs,sourceCmdName){
@@ -92,8 +93,8 @@
             }
             return range.moveToBookmark( bookmark2 ).moveToBookmark( bookmark );
         };
-
-    UE.commands['paragraph'] = {
+    me.setOpt('paragraph',['p:段落', 'h1:标题 1', 'h2:标题 2', 'h3:标题 3', 'h4:标题 4', 'h5:标题 5', 'h6:标题 6']);
+    me.commands['paragraph'] = {
         execCommand : function( cmdName, style,attrs,sourceCmdName ) {
             var range = new dom.Range(this.document);
             if(this.currentSelectedArr && this.currentSelectedArr.length > 0){
@@ -178,4 +179,4 @@
             return this.highlight ? -1 :0;
         }
     }
-})();
+};

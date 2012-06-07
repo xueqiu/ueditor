@@ -9,8 +9,8 @@
 
 UE.plugins['undo'] = function() {
     var me = this,
-        maxUndoCount = me.options.maxUndoCount,
-        maxInputCount = me.options.maxInputCount,
+        maxUndoCount = me.options.maxUndoCount || 20,
+        maxInputCount = me.options.maxInputCount || 20,
         fillchar = new RegExp(domUtils.fillChar + '|<\/hr>','gi'),// ie会产生多余的</hr>
         //在比较时，需要过滤掉这些属性
         specialAttr = /\b(?:href|src|name)="[^"]*?"/gi;

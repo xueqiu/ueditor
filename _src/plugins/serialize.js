@@ -11,7 +11,7 @@ UE.plugins['serialize'] = function () {
             return  Math.round(parseFloat(str) * 96 / 72) + "px";
         } ) : value;
     }
-    var me = this,
+    var me = this, autoClearEmptyNode = me.options.autoClearEmptyNode,
             EMPTY_TAG = dtd.$empty,
             parseHTML = function () {
                  //干掉<a> 后便变得空格，保留</a>  这样的空格
@@ -327,7 +327,11 @@ UE.plugins['serialize'] = function () {
                             return utils.fixColor('color',str);
                         } )
                     }
-                    attrs[k] = utils.optCss(value.replace(/windowtext/g,'#000'));
+                    //过滤掉所有的white-space,在纯文本编辑器里粘贴过来的内容，到chrome中会带有span和white-space属性，导致出现不能折行的情况
+                    //所以在这里去掉这个属性
+                    attrs[k] = utils.optCss(value.replace(/windowtext/g,'#000'))
+                                .replace(/white-space[^;]+;/g,'');
+
                 }
 
                 buff.push( k + '="' + unhtml1( attrs[k] ) + '"' );
@@ -352,6 +356,9 @@ UE.plugins['serialize'] = function () {
         };
 
         function printElement( node, pasteplain ) {
+            if ( node.type == 'element' && !node.children.length && (dtd.$removeEmpty[node.tag]) && node.tag != 'a' && utils.isEmptyObject(node.attributes) && autoClearEmptyNode) {// 锚点保留
+                return html;
+            }
             var tag = node.tag;
             if ( pasteplain && tag == 'td' ) {
                 if ( !html ) html = '';
@@ -360,10 +367,10 @@ UE.plugins['serialize'] = function () {
                 var attrs = printAttrs( node.attributes );
                 var html = '<' + (pasteplain && transHtml[tag] ? transHtml[tag] : tag) + (attrs ? ' ' + attrs : '') + (EMPTY_TAG[tag] ? ' />' : '>');
                 if ( !EMPTY_TAG[tag] ) {
-                    //trace:1627
-                    //p标签在ie下为空，将不占位这里占位符不起作用，用&nbsp;
-                    if(browser.ie && tag == 'p' && !node.children.length){
-                        html += '&nbsp;';
+                    //trace:1627 ,2070
+                    //p标签为空，将不占位这里占位符不起作用，用&nbsp;或者br
+                    if( tag == 'p' && !node.children.length){
+                        html += browser.ie ? '&nbsp;' : '<br/>';
                     }
                     html += printChildren( node, pasteplain );
                     html += '</' + (pasteplain && transHtml[tag] ? transHtml[tag] : tag) + '>';
@@ -414,10 +421,15 @@ UE.plugins['serialize'] = function () {
                 .replace( /<!--[\s\S]*?-->/ig, "" )
                 //转换图片
                 .replace(/<v:shape [^>]*>[\s\S]*?.<\/v:shape>/gi,function(str){
-                    var width = str.match(/width:([ \d.]*p[tx])/i)[1],
-                        height = str.match(/height:([ \d.]*p[tx])/i)[1],
-                        src =  str.match(/src=\s*"([^"]*)"/i)[1];
-                    return '<img width="'+ptToPx(width)+'" height="'+ptToPx(height)+'" src="' + src + '" />'
+                    try{
+                        var width = str.match(/width:([ \d.]*p[tx])/i)[1],
+                            height = str.match(/height:([ \d.]*p[tx])/i)[1],
+                            src =  str.match(/src=\s*"([^"]*)"/i)[1];
+                        return '<img width="'+ptToPx(width)+'" height="'+ptToPx(height)+'" src="' + src + '" />'
+                    } catch(e){
+                        return '';
+                    }
+
                 })
                 //去掉多余的属性
                 .replace( /v:\w+=["']?[^'"]+["']?/g, '' )
@@ -430,7 +442,7 @@ UE.plugins['serialize'] = function () {
                 //清除多余的font不能匹配&nbsp;有可能是空格
                 .replace( /<font[^>]*>\s*<\/font>/gi, '' )
                 //清除多余的class
-                .replace( /class\s*=\s*["']?(?:(?:MsoTableGrid)|(?:MsoNormal(Table)?))\s*["']?/gi, '' );
+                .replace( /class\s*=\s*["']?(?:(?:MsoTableGrid)|(?:MsoListParagraph)|(?:MsoNormal(Table)?))\s*["']?/gi, '' );
 
             // Examine all styles: delete junk, transform some, and keep the rest
             //修复了原有的问题, 比如style='fontsize:"宋体"'原来的匹配失效了
@@ -461,7 +473,8 @@ UE.plugins['serialize'] = function () {
                             case "mso-margin-right-alt":
                             case "mso-margin-bottom-alt":
                             case "mso-margin-left-alt":
-                            case "mso-table-layout-alt":
+                            //ie下会出现挤到一起的情况
+//                            case "mso-table-layout-alt":
                             case "mso-height":
                             case "mso-width":
                             case "mso-vertical-align-alt":
@@ -522,7 +535,7 @@ UE.plugins['serialize'] = function () {
                         }
 
                         if ( /^(mso|column|font-emph|lang|layout|line-break|list-image|nav|panose|punct|row|ruby|sep|size|src|tab-|table-border|text-(?:decor|trans)|top-bar|version|vnd|word-break)/.test( name ) ) {
-                            if ( !/mso\-list/.test( name ) )
+//                            if ( !/mso\-list/.test( name ) )
                                 continue;
                         }
                         n[i] = name + ":" + parts[1];        // Lower-case name, but keep value case
@@ -559,51 +572,48 @@ UE.plugins['serialize'] = function () {
         'fragment': '#document-fragment'
     };
 
-    function _likeLi( node ) {
-        var a;
-        if ( node && node.tag == 'p' ) {
-            //office 2011下有效
-            if ( node.attributes['class'] == 'MsoListParagraph' || /mso-list/.test( node.attributes.style ) ) {
-                a = 1;
-            } else {
-                var firstChild = node.children[0];
-                if ( firstChild && firstChild.tag == 'span' && /Wingdings/i.test( firstChild.attributes.style ) ) {
-                    a = 1;
-                }
-            }
-        }
-        return a;
-    }
+//    function _likeLi( node ) {
+//        var a;
+//        if ( node && node.tag == 'p' ) {
+//            //office 2011下有效
+//            if ( node.attributes['class'] == 'MsoListParagraph' || /mso-list/.test( node.attributes.style ) ) {
+//                a = 1;
+//            } else {
+//                var firstChild = node.children[0];
+//                if ( firstChild && firstChild.tag == 'span' && /Wingdings/i.test( firstChild.attributes.style ) ) {
+//                    a = 1;
+//                }
+//            }
+//        }
+//        return a;
+//    }
 
     //为p==>li 做个标志
     var first,
-            orderStyle = {
-                'decimal' : /\d+/,
-                'lower-roman': /^m{0,4}(cm|cd|d?c{0,3})(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})$/,
-                'upper-roman': /^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$/,
-                'lower-alpha' : /^\(?[a-z]+\)?$/,
-                'upper-alpha': /^\(?[A-Z]+\)?$/
-            },
-            unorderStyle = { 'disc' : /^[l\u00B7\u2002]/, 'circle' : /^[\u006F\u00D8]/,'square' : /^[\u006E\u25C6]/},
+//            orderStyle = {
+//                'decimal' : /\d+/,
+//                'lower-roman': /^m{0,4}(cm|cd|d?c{0,3})(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})$/,
+//                'upper-roman': /^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$/,
+//                'lower-alpha' : /^\(?[a-z]+\)?$/,
+//                'upper-alpha': /^\(?[A-Z]+\)?$/
+//            },
+//            unorderStyle = { 'disc' : /^[l\u00B7\u2002]/, 'circle' : /^[\u006F\u00D8]/,'square' : /^[\u006E\u25C6]/},
             parentTag = '',liStyle = '',firstTag;
 
 
     //写入编辑器时，调用，进行转换操作
     function transNode( node, word_img_flag ) {
-        //dtd.$removeEmptyBlock[node.tag]
-        if ( node.type == 'element' && !node.children.length && (dtd.$removeEmpty[node.tag]) && node.tag != 'a' ) {// 锚点保留
 
-
-            return {
-                type : 'fragment',
-                children:[]
-            }
-        }
         var sizeMap = [0, 10, 12, 16, 18, 24, 32, 48],
                 attr,
                 indexOf = utils.indexOf;
-
         switch ( node.tag ) {
+            case 'script':
+                node.tag = 'div';
+                node.attributes._ue_div_script = 1;
+                node.attributes._ue_script_data = node.children[0] ? node.children[0].data  : '';
+                node.children = [];
+                break;
             case 'img':
                 //todo base64暂时去掉，后边做远程图片上传后，干掉这个
                 if(node.attributes.src && /^data:/.test(node.attributes.src)){
@@ -626,7 +636,7 @@ UE.plugins['serialize'] = function () {
                     //node.attributes.style = 'width:395px;height:173px;';
                     word_img_flag && (word_img_flag.flag = 1);
                 }
-                if(browser.ie && browser.version < 7 && me.options.relativePath)
+                if(browser.ie && browser.version < 7 )
                     node.attributes.orgSrc = node.attributes.src;
                 node.attributes.data_ue_src = node.attributes.data_ue_src || node.attributes.src;
                 break;
@@ -699,77 +709,77 @@ UE.plugins['serialize'] = function () {
                 }
                 break;
             case 'span':
-                if ( /mso-list/.test( node.attributes.style ) ) {
-                    
-
-                    //判断了两次就不在判断了
-                    if ( firstTag != 'end' ) {
-
-                        var ci = node.children[0],p;
-                        while ( ci.type == 'element' ) {
-                            ci = ci.children[0];
-                        }
-                        for ( p in unorderStyle ) {
-                            if ( unorderStyle[p].test( ci.data ) ) {
-                                
-                                // ci.data = ci.data.replace(unorderStyle[p],'');
-                                parentTag = 'ul';
-                                liStyle = p;
-                                break;
-                            }
-                        }
-
-
-                        if ( !parentTag ) {
-                            for ( p in orderStyle ) {
-                                if ( orderStyle[p].test( ci.data.replace( /\.$/, '' ) ) ) {
-                                    //   ci.data = ci.data.replace(orderStyle[p],'');
-                                    parentTag = 'ol';
-                                    liStyle = p;
-                                    break;
-                                }
-                            }
-                        }
-                        if ( firstTag ) {
-                            if ( ci.data == firstTag ) {
-                                if ( parentTag != 'ul' ) {
-                                    liStyle = '';
-                                }
-                                parentTag = 'ul'
-                            } else {
-                                if ( parentTag != 'ol' ) {
-                                    liStyle = '';
-                                }
-                                parentTag = 'ol'
-                            }
-                            firstTag = 'end'
-                        } else {
-                            firstTag = ci.data
-                        }
-                        if ( parentTag ) {
-                            var tmpNode = node;
-                            while ( tmpNode && tmpNode.tag != 'ul' && tmpNode.tag != 'ol' ) {
-                                tmpNode = tmpNode.parent;
-                            }
-                            if(tmpNode ){
-                                  tmpNode.tag = parentTag;
-                                tmpNode.attributes.style = 'list-style-type:' + liStyle;
-                            }
-
-
-
-                        }
-
-                    }
-
-                    node = {
-                        type : 'fragment',
-                        children : []
-                    };
-                    break;
-
-
-                }
+//                if ( /mso-list/.test( node.attributes.style ) ) {
+//
+//
+//                    //判断了两次就不在判断了
+//                    if ( firstTag != 'end' ) {
+//
+//                        var ci = node.children[0],p;
+//                        while ( ci.type == 'element' ) {
+//                            ci = ci.children[0];
+//                        }
+//                        for ( p in unorderStyle ) {
+//                            if ( unorderStyle[p].test( ci.data ) ) {
+//
+//                                // ci.data = ci.data.replace(unorderStyle[p],'');
+//                                parentTag = 'ul';
+//                                liStyle = p;
+//                                break;
+//                            }
+//                        }
+//
+//
+//                        if ( !parentTag ) {
+//                            for ( p in orderStyle ) {
+//                                if ( orderStyle[p].test( ci.data.replace( /\.$/, '' ) ) ) {
+//                                    //   ci.data = ci.data.replace(orderStyle[p],'');
+//                                    parentTag = 'ol';
+//                                    liStyle = p;
+//                                    break;
+//                                }
+//                            }
+//                        }
+//                        if ( firstTag ) {
+//                            if ( ci.data == firstTag ) {
+//                                if ( parentTag != 'ul' ) {
+//                                    liStyle = '';
+//                                }
+//                                parentTag = 'ul'
+//                            } else {
+//                                if ( parentTag != 'ol' ) {
+//                                    liStyle = '';
+//                                }
+//                                parentTag = 'ol'
+//                            }
+//                            firstTag = 'end'
+//                        } else {
+//                            firstTag = ci.data
+//                        }
+//                        if ( parentTag ) {
+//                            var tmpNode = node;
+//                            while ( tmpNode && tmpNode.tag != 'ul' && tmpNode.tag != 'ol' ) {
+//                                tmpNode = tmpNode.parent;
+//                            }
+//                            if(tmpNode ){
+//                                  tmpNode.tag = parentTag;
+//                                tmpNode.attributes.style = 'list-style-type:' + liStyle;
+//                            }
+//
+//
+//
+//                        }
+//
+//                    }
+//
+//                    node = {
+//                        type : 'fragment',
+//                        children : []
+//                    };
+//                    break;
+//
+//
+//                }
                 var style = node.attributes.style;
                 if ( style ) {
                     //trace:1493
@@ -777,9 +787,9 @@ UE.plugins['serialize'] = function () {
                     style = style.match( /(?:\b(?:color|font-size|background(-color)?|font-family|text-decoration)\b\s*:\s*(&[^;]+;|[^;])+(?=;)?)/gi );
                     if ( style ) {
                         node.attributes.style = style.join( ';' );
-                        if ( !node.attributes.style ) {
-                            delete node.attributes.style;
-                        }
+                    }
+                    if ( !node.attributes.style  || browser.webkit && style == "white-space:nowrap;") {
+                        delete node.attributes.style;
                     }
                 }
 
@@ -791,7 +801,7 @@ UE.plugins['serialize'] = function () {
                         node.attributes.style = parent.attributes.style + ';' + node.attributes.style;
                     }
                 }
-                if ( utils.isEmptyObject( node.attributes ) ) {
+                if ( utils.isEmptyObject( node.attributes ) && autoClearEmptyNode) {
                     node.type = 'fragment'
                 }
                 break;
@@ -819,53 +829,53 @@ UE.plugins['serialize'] = function () {
                     delete node.attributes.align;
                 }
 
-                if ( _likeLi( node ) ) {
-
-                    if ( !first ) {
-
-                        var ulNode = {
-                            type: 'element',
-                            tag: 'ul',
-                            attributes: {},
-                            children: []
-                        },
-                                index = indexOf( node.parent.children, node );
-                        node.parent.children[index] = ulNode;
-                        ulNode.parent = node.parent;
-                        ulNode.children[0] = node;
-                        node.parent = ulNode;
-
-                        while ( 1 ) {
-                            node = ulNode.parent.children[index + 1];
-                            if ( _likeLi( node ) ) {
-                                ulNode.children[ulNode.children.length] = node;
-                                node.parent = ulNode;
-                                ulNode.parent.children.splice( index + 1, 1 );
-
-                            } else {
-                                break;
-                            }
-                        }
-
-                        return ulNode;
-                    }
-                    node.tag = node.name = 'li';
-                    //为chrome能找到标号做的处理
-                    if ( browser.webkit ) {
-                        var span = node.children[0];
-
-                        while ( span && span.type == 'element' ) {
-                            span = span.children[0]
-                        }
-                        span && (span.parent.attributes.style = (span.parent.attributes.style || '') + ';mso-list:10');
-                    }
-
-
-                    delete node.attributes['class'];
-                    delete node.attributes.style;
-
-
-                }
+//                if ( _likeLi( node ) ) {
+//
+//                    if ( !first ) {
+//
+//                        var ulNode = {
+//                            type: 'element',
+//                            tag: 'ul',
+//                            attributes: {},
+//                            children: []
+//                        },
+//                                index = indexOf( node.parent.children, node );
+//                        node.parent.children[index] = ulNode;
+//                        ulNode.parent = node.parent;
+//                        ulNode.children[0] = node;
+//                        node.parent = ulNode;
+//
+//                        while ( 1 ) {
+//                            node = ulNode.parent.children[index + 1];
+//                            if ( _likeLi( node ) ) {
+//                                ulNode.children[ulNode.children.length] = node;
+//                                node.parent = ulNode;
+//                                ulNode.parent.children.splice( index + 1, 1 );
+//
+//                            } else {
+//                                break;
+//                            }
+//                        }
+//
+//                        return ulNode;
+//                    }
+//                    node.tag = node.name = 'li';
+//                    //为chrome能找到标号做的处理
+//                    if ( browser.webkit ) {
+//                        var span = node.children[0];
+//
+//                        while ( span && span.type == 'element' ) {
+//                            span = span.children[0]
+//                        }
+//                        span && (span.parent.attributes.style = (span.parent.attributes.style || '') + ';mso-list:10');
+//                    }
+//
+//
+//                    delete node.attributes['class'];
+//                    delete node.attributes.style;
+//
+//
+//                }
         }
         return node;
     }
@@ -877,9 +887,18 @@ UE.plugins['serialize'] = function () {
             node.attributes.style = node.attributes.style.replace( /^\s*|\s*$/, '' )
         }
     }
-
+    //getContent调用转换
     function transOutNode( node ) {
+
         switch ( node.tag ) {
+            case 'div' :
+                if(node.attributes._ue_div_script){
+                    node.tag = 'script';
+                    node.children = [{type:'cdata',data:node.attributes._ue_script_data||'',parent:node}];
+                    delete node.attributes._ue_div_script;
+                    delete node.attributes._ue_script_data;
+                    break;
+                }
             case 'table':
                 !node.attributes.style && delete node.attributes.style;
                 if ( ie && node.attributes.style ) {
@@ -906,6 +925,9 @@ UE.plugins['serialize'] = function () {
                 if ( ie && node.attributes.style ) {
                     optStyle( node );
 
+                }
+                if(node.attributes['class'] == 'selectTdClass'){
+                    delete node.attributes['class']
                 }
                 break;
             case 'img'://锚点，img==>a
@@ -1027,15 +1049,15 @@ UE.plugins['serialize'] = function () {
 
             function visitNode( node ) {
                 node = transNode( node, word_img_flag );
-                if ( node.tag == 'ol' || node.tag == 'ul' ) {
-                    first = 1;
-                }
+//                if ( node.tag == 'ol' || node.tag == 'ul' ) {
+//                    first = 1;
+//                }
                 node = childrenAccept( node, visitNode, node );
-                if ( node.tag == 'ol' || node.tag == 'ul' ) {
-                    first = 0;
-                    parentTag = '',liStyle = '',firstTag = '';
-                }
-                if ( node.type == 'text' && node.data.replace( /\s/g, '' ) == me.options.pageBreakTag ) {
+//                if ( node.tag == 'ol' || node.tag == 'ul' ) {
+//                    first = 0;
+//                    parentTag = '',liStyle = '',firstTag = '';
+//                }
+                if ( me.options.pageBreakTag && node.type == 'text' && node.data.replace( /\s/g, '' ) == me.options.pageBreakTag ) {
 
                     node.type = 'element';
                     node.name = node.tag = 'hr';
@@ -1089,6 +1111,6 @@ UE.plugins['serialize'] = function () {
         parseHTML: parseHTML,
         word: transformWordHtml
     };
-    me.serialize = new Serialize( me.options.serialize );
+    me.serialize = new Serialize( me.options.serialize || {});
     UE.serialize = new Serialize( {} );
 };

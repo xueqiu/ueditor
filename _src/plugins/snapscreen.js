@@ -6,11 +6,15 @@
  */
 UE.commands['snapscreen'] = {
     execCommand: function(){
-        var me = this,
-            editorOptions = me.options;
-        
+        var me = this;
+        me.setOpt({
+               snapscreenServerPort: 80                                    //屏幕截图的server端端口
+              ,snapscreenImgAlign: 'center'                                //截图的图片默认的排版方式
+        });
+        var editorOptions = me.options;
+
         if(!browser.ie){
-                alert(editorOptions.messages.snapScreenNotIETip);
+                alert('截图功能需要在ie浏览器下使用');
                 return;
         }
 
@@ -27,25 +31,25 @@ UE.commands['snapscreen'] = {
                 return;
             }
             me.execCommand('insertimage', {
-                src: (editorOptions.snapscreenImgIsUseImagePath ? editorOptions.imagePath : '') + rs.url,
+                src: editorOptions.snapscreenPath + rs.url,
                 floatStyle: editorOptions.snapscreenImgAlign,
-                data_ue_src:(editorOptions.snapscreenImgIsUseImagePath ? editorOptions.imagePath : '') + rs.url
+                data_ue_src:editorOptions.snapscreenPath + rs.url
             });
         };
         var onStartUpload = function(){
             //开始截图上传
         };
         var onError = function(){
-            alert(editorOptions.messages.snapScreenMsg);
+            alert('截图上传失败，请检查你的PHP环境。 ');
         };
         try{
             var nativeObj = new ActiveXObject('Snapsie.CoSnapsie');
-            nativeObj.saveSnapshot(editorOptions.snapscreenHost, editorOptions.snapscreenServerFile, editorOptions.snapscreenServerPort, onStartUpload,onSuccess,onError);
+            nativeObj.saveSnapshot(editorOptions.snapscreenHost, editorOptions.snapscreenServerUrl, editorOptions.snapscreenServerPort, onStartUpload,onSuccess,onError);
         }catch(e){
-            me.snapscreenInstall.open();
+            me.ui._dialogs['snapscreenDialog'].open();
         }
     },
     queryCommandState: function(){
-        return this.highlight ? -1 :0;
+        return this.highlight || !browser.ie ? -1 :0;
     }
 };

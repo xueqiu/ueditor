@@ -1,5 +1,7 @@
+//ui跟编辑器的适配層
+//那个按钮弹出是dialog，是下拉筐等都是在这个js中配置
+//自己写的ui也要在这里配置，放到baidu.editor.ui下边，当编辑器实例化的时候会根据editor_config中的toolbars找到相应的进行实例化
 (function (){
-    var isIE = baidu.editor.browser.ie;
     var utils = baidu.editor.utils;
     var editorui = baidu.editor.ui;
     var _Dialog = editorui.Dialog;
@@ -16,107 +18,69 @@
         return dialog;
     };
 
-    var k, cmd;
+    var  iframeUrlMap ={
+        'anchor':'~/dialogs/anchor/anchor.html',
+        'insertimage':'~/dialogs/image/image.html',
+        'inserttable':'~/dialogs/table/table.html',
+        'link':'~/dialogs/link/link.html',
+        'spechars':'~/dialogs/spechars/spechars.html',
+        'searchreplace':'~/dialogs/searchreplace/searchreplace.html',
+        'map':'~/dialogs/map/map.html',
+        'gmap':'~/dialogs/gmap/gmap.html',
+        'insertvideo':'~/dialogs/video/video.html',
+        'help':'~/dialogs/help/help.html',
+        'highlightcode':'~/dialogs/code/code.html',
+        'emotion':'~/dialogs/emotion/emotion.html',
+        'wordimage':'~/dialogs/wordimage/wordimage.html',
+        'attachment':'~/dialogs/attachment/attachment.html',
+        'insertframe':'~/dialogs/insertframe/insertframe.html',
+        'edittd':'~/dialogs/table/edittd.html',
+        'webapp':'~/dialogs/webapp/webapp.html',
+        'snapscreen': '~/dialogs/snapscreen/snapscreen.html'
+    };
+    //为工具栏添加按钮，以下都是统一的按钮触发命令，所以写在一起
+    var btnCmds = ['undo', 'redo','formatmatch',
+        'bold', 'italic', 'underline',
+        'strikethrough', 'subscript', 'superscript','source','indent','outdent',
+        'blockquote','pasteplain','pagebreak',
+        'selectall', 'print', 'preview', 'horizontal', 'removeformat','time','date','unlink',
+        'insertparagraphbeforetable','insertrow','insertcol','mergeright','mergedown','deleterow',
+        'deletecol','splittorows','splittocols','splittocells','mergecells','deletetable'];
 
-    var btnCmds = ['Undo', 'Redo','FormatMatch',
-        'Bold', 'Italic', 'Underline',
-        'StrikeThrough', 'Subscript', 'Superscript','Source','Indent','Outdent',
-        'BlockQuote','PastePlain','PageBreak',
-        'SelectAll', 'Print', 'Preview', 'Horizontal', 'RemoveFormat','Time','Date','Unlink',
-        'InsertParagraphBeforeTable','InsertRow','InsertCol','MergeRight','MergeDown','DeleteRow',
-        'DeleteCol','SplittoRows','SplittoCols','SplittoCells','MergeCells','DeleteTable'];
-    k = btnCmds.length;
-    while (k --) {
-        cmd = btnCmds[k];
-        editorui[cmd] = function (cmd){
+    for(var i=0,ci;ci=btnCmds[i++];){
+        ci = ci.toLowerCase();
+        editorui[ci] = function (cmd){
             return function (editor, title){
-                title = title || editor.options.labelMap[cmd.toLowerCase()] || '';
                 var ui = new editorui.Button({
-                    className: 'edui-for-' + cmd.toLowerCase(),
-                    title: title,
+                    className: 'edui-for-' + cmd,
+                    title: title || editor.options.labelMap[cmd] || '',
                     onclick: function (){
                         editor.execCommand(cmd);
                     },
                     showText: false
                 });
                 editor.addListener('selectionchange', function (type, causeByUi, uiReady){
-                    var state = editor.queryCommandState(cmd.toLowerCase());
+                    var state = editor.queryCommandState(cmd);
                     if (state == -1) {
                         ui.setDisabled(true);
                         ui.setChecked(false);
                     } else {
-                        
                         if(!uiReady){
                             ui.setDisabled(false);
                             ui.setChecked(state);
                         }
-
                     }
                 });
                 return ui;
             };
-        }(cmd);
+        }(ci);
     }
-    editorui.SnapScreen = function(editor, title){
-        var cmd = "SnapScreen";
-        title = title || editor.options.labelMap[cmd.toLowerCase()] || '';
-        var ui = new editorui.Button({
-            className: 'edui-for-' + cmd.toLowerCase(),
-            title: title,
-            onclick: function (){
-                editor.execCommand(cmd);
-            }
-        });
 
-        if(isIE){
-            var iframeUrl = editor.options.iframeUrlMap['snapscreen'];
-            iframeUrl = editor.ui.mapUrl(iframeUrl);
-            title = title || editor.options.labelMap['snapscreen'] || '';
-            var dialog = new editorui.Dialog({
-                iframeUrl: iframeUrl,
-                autoReset: true,
-                draggable: true,
-                editor: editor,
-                className: 'edui-for-snapscreen',
-                title: title,
-                buttons: [{
-                    className: 'edui-okbutton',
-                    label: '确认',
-                    onclick: function (){
-                        dialog.close(true);
-                    }
-                }, {
-                    className: 'edui-cancelbutton',
-                    label: '取消',
-                    onclick: function (){
-                        dialog.close(false);
-                    }
-                }],
-                onok: function (){},
-                oncancel: function (){},
-                onclose: function (t, ok){
-                    if (ok) {
-                        return this.onok();
-                    } else {
-                        return this.oncancel();
-                    }
-                }
-            });
-            dialog.render();
-            editor.snapscreenInstall = dialog;
-        }
-        editor.addListener('selectionchange',function(){
-            var state = editor.queryCommandState('snapscreen');
-            ui.setDisabled(state == -1);
-        });
-        return ui;
-    };
-    editorui.ClearDoc = function(editor, title){
-        var cmd = "ClearDoc";
-        title = title || editor.options.labelMap[cmd.toLowerCase()] || '';
+    //清除文档
+    editorui.cleardoc = function(editor, title){
         var ui = new editorui.Button({
-            className: 'edui-for-' + cmd.toLowerCase(),
-            title: title,
+            className: 'edui-for-cleardoc',
+            title: title || editor.options.labelMap.cleardoc || '',
             onclick: function (){
                 if(confirm('确定清空文档吗？')){
                     editor.execCommand('cleardoc');
@@ -124,109 +88,50 @@
             }
         });
         editor.addListener('selectionchange',function(){
-            var state = editor.queryCommandState('cleardoc');
-            ui.setDisabled(state == -1);
+            ui.setDisabled(editor.queryCommandState('cleardoc') == -1);
         });
         return ui;
     };
 
-    editorui.Justify = function (editor, side, title){
-        side = (side || 'left').toLowerCase();
-        title = title || editor.options.labelMap['justify'+side.toLowerCase()] || '';
-        var ui = new editorui.Button({
-            className: 'edui-for-justify' + side.toLowerCase(),
-            title: title,
-            onclick: function (){
-                editor.execCommand('Justify', side);
-            }
-        });
-        editor.addListener('selectionchange', function (type, causeByUi, uiReady){
-            var state = editor.queryCommandState('Justify');
-            ui.setDisabled(state == -1);
-            var value = editor.queryCommandValue('Justify');
-            ui.setChecked(value == side && !uiReady);
-        });
-        return ui;
-    };
-    editorui.JustifyLeft = function (editor, title){
-        return editorui.Justify(editor, 'left', title);
-    };
-    editorui.JustifyCenter = function (editor, title){
-        return editorui.Justify(editor, 'center', title);
-    };
-    editorui.JustifyRight = function (editor, title){
-        return editorui.Justify(editor, 'right', title);
-    };
-    editorui.JustifyJustify = function (editor, title){
-        return editorui.Justify(editor, 'justify', title);
-    };
-    editorui.ImageFloat = function(editor,side,title){
-        side = (side || 'none').toLowerCase();
-        title = title || editor.options.labelMap['image'+side.toLowerCase()] || '';
-        var ui = new editorui.Button({
-            className: 'edui-for-image' + side.toLowerCase(),
-            title: title,
-            onclick: function (){
-                editor.execCommand('imagefloat', side);
-            }
-        });
-        editor.addListener('selectionchange', function (type){
-            var state = editor.queryCommandState('imagefloat');
-            ui.setDisabled(state == -1);
-            var state = editor.queryCommandValue('imagefloat');
-            ui.setChecked(state == side);
-        });
-        return ui;
-    };
-    editorui.ImageNone = function(editor,title){
-        return editorui.ImageFloat(editor, title);
-    };
-    editorui.ImageLeft = function(editor,title){
-        return editorui.ImageFloat(editor,"left", title);
-    };
-    editorui.ImageRight = function(editor,title){
-        return editorui.ImageFloat(editor,"right", title);
-    };
-    editorui.ImageCenter = function(editor,title){
-        return editorui.ImageFloat(editor,"center", title);
+    //排版，图片排版，文字方向
+    var typeset = {
+        'justify' : ['left','right','center','justify'],
+        'imagefloat' :  ['none','left','center','right'],
+        'directionality' : ['ltr','rtl']
     };
 
-    editorui.Directionality = function (editor, side, title){
-        side = (side || 'left').toLowerCase();
-        title = title || editor.options.labelMap['directionality'+side.toLowerCase()] || '';
-        var ui = new editorui.Button({
-            className: 'edui-for-directionality' + side.toLowerCase(),
-            title: title,
-            onclick: function (){
-                editor.execCommand('directionality', side);
-            },
-            type : side
-        });
-        editor.addListener('selectionchange', function (type, causeByUi, uiReady){
-            var state = editor.queryCommandState('directionality');
-            ui.setDisabled(state == -1);
-            var value = editor.queryCommandValue('directionality');
-            ui.setChecked(value == ui.type && !uiReady);
-        });
-        return ui;
-    };
-    editorui.DirectionalityLtr = function (editor, title){
-        return new editorui.Directionality(editor, 'ltr', title);
-    };
-    editorui.DirectionalityRtl = function (editor, title){
-        return new editorui.Directionality(editor, 'rtl', title);
-    };
-    var colorCmds = ['BackColor', 'ForeColor'];
-    k = colorCmds.length;
-    while (k --) {
-        cmd = colorCmds[k];
-        editorui[cmd] = function (cmd){
+    for(var p in typeset){
+
+        (function(cmd,val){
+            for(var i=0,ci;ci=val[i++];){
+                (function(cmd2){
+                    editorui[cmd.replace('float','')+cmd2] = function (editor, title){
+                        var ui = new editorui.Button({
+                            className: 'edui-for-'+ cmd.replace('float','') + cmd2,
+                            title: title || editor.options.labelMap[cmd.replace('float','') + cmd2] || '',
+                            onclick: function (){
+                                editor.execCommand(cmd, cmd2);
+                            }
+                        });
+                        editor.addListener('selectionchange', function (type, causeByUi, uiReady){
+                            ui.setDisabled(editor.queryCommandState(cmd) == -1);
+                            ui.setChecked(editor.queryCommandValue(cmd) == cmd2 && !uiReady);
+                        });
+                        return ui;
+                    };
+                })(ci)
+            }
+        })(p,typeset[p])
+    }
+
+    //字体颜色和背景颜色
+    for(var i=0,ci;ci = ['backcolor', 'forecolor'][i++];){
+        editorui[ci] = function (cmd){
             return function (editor, title){
-                title = title || editor.options.labelMap[cmd.toLowerCase()] || '';
                 var ui = new editorui.ColorButton({
-                    className: 'edui-for-' + cmd.toLowerCase(),
+                    className: 'edui-for-' + cmd,
                     color: 'default',
-                    title: title,
+                    title: title || editor.options.labelMap[cmd] || '',
                     editor:editor,
                     onpickcolor: function (t, color){
                         editor.execCommand(cmd, color);
@@ -241,85 +146,104 @@
                     }
                 });
                 editor.addListener('selectionchange', function (){
-                    var state = editor.queryCommandState(cmd);
-                    if (state == -1) {
-                        ui.setDisabled(true);
-                    } else {
-                        ui.setDisabled(false);
-                    }
+                    ui.setDisabled(editor.queryCommandState(cmd) == -1);
                 });
                 return ui;
             };
-        }(cmd);
+        }(ci);
     }
 
-    //不需要确定取消按钮的dialog
-    var dialogNoButton = ['SearchReplace','Help','Spechars'];
-    k = dialogNoButton.length;
-    while(k --){
-        cmd = dialogNoButton[k];
-        editorui[cmd] = function (cmd){
-            cmd = cmd.toLowerCase();
-            return function (editor, iframeUrl, title){
-                iframeUrl = iframeUrl || editor.options.iframeUrlMap[cmd.toLowerCase()] || 'about:blank';
-                iframeUrl = editor.ui.mapUrl(iframeUrl);
-                title = title || editor.options.labelMap[cmd.toLowerCase()] || '';
-                var dialog = new editorui.Dialog({
-                    iframeUrl: iframeUrl,
-                    autoReset: true,
-                    draggable: true,
-                    editor: editor,
-                    className: 'edui-for-' + cmd,
-                    title: title,
-                    onok: function (){},
-                    oncancel: function (){},
-                    onclose: function (t, ok){
-                        if (ok) {
-                            return this.onok();
-                        } else {
-                            return this.oncancel();
+
+    var dialogBtns = {
+        noOk : ['searchreplace','help','spechars','webapp'],
+        ok : ['attachment','anchor','link', 'insertimage', 'map', 'gmap','insertframe','wordimage',
+            'insertvideo','highlightcode','insertframe','edittd']
+
+    };
+
+    for(var p in dialogBtns){
+        (function(type,vals){
+            for(var i = 0,ci;ci=vals[i++];){
+                (function(cmd){
+                    editorui[cmd] =function (editor, iframeUrl, title){
+                        iframeUrl = iframeUrl || (editor.options.iframeUrlMap||{})[cmd] || iframeUrlMap[cmd];
+                        title = title ||editor.options.labelMap[cmd.toLowerCase()] || '';
+                        //没有iframeUrl不创建dialog
+                        if(!iframeUrl){
+                            return;
                         }
-                    }
-                });
-                dialog.render();
-                var ui = new editorui.Button({
-                    className: 'edui-for-' + cmd,
-                    title: title,
-                    onclick: function (){
-                        dialog.open();
-                    }
-                });
-                editor.addListener('selectionchange', function (){
-                    var state = editor.queryCommandState(cmd);
-                    if (state == -1) {
-                        ui.setDisabled(true);
-                    } else {
-                        ui.setDisabled(false);
-                    }
-                });
-                return ui;
-            };
-        }(cmd);
+                        var dialog = new editorui.Dialog( utils.extend({
+                            iframeUrl: editor.ui.mapUrl(iframeUrl),
+                            editor: editor,
+                            className: 'edui-for-' + cmd,
+                            title: title
+                        },type == 'ok'?{
+                            buttons: [{
+                                className: 'edui-okbutton',
+                                label: '确认',
+                                onclick: function (){
+                                    dialog.close(true);
+                                }
+                            }, {
+                                className: 'edui-cancelbutton',
+                                label: '取消',
+                                onclick: function (){
+                                    dialog.close(false);
+                                }
+                            }]
+                        }:{}));
+
+                        editor.ui._dialogs[cmd+"Dialog"] = dialog;
+                        var ui = new editorui.Button({
+                            className: 'edui-for-' + cmd,
+                            title: title,
+                            onclick: function (){
+                                if(cmd=="wordimage"){//wordimage需要先判断是否存在word_img属性再确定是否打开
+                                    editor.execCommand("wordimage","word_img");
+                                    if(editor.word_img){
+                                        dialog.render();
+                                        dialog.open();
+                                    }
+                                }else{
+                                    dialog.render();
+                                    dialog.open();
+                                }
+
+                            }
+                        });
+                        editor.addListener('selectionchange', function (){
+                            //只存在于右键菜单而无工具栏按钮的ui不需要检测状态
+                            var unNeedCheckState = {'edittd':1,'edittable':1};
+                            if(cmd in unNeedCheckState)return;
+
+                            var state = editor.queryCommandState(cmd);
+                            ui.setDisabled(state == -1);
+                            ui.setChecked(state);
+                        });
+                        return ui;
+                    };
+                })(ci.toLowerCase())
+            }
+        })(p,dialogBtns[p])
     }
 
-    var dialogCmds = ['Attachment','Anchor','Link', 'InsertImage', 'Map', 'GMap', 'InsertVideo','TableSuper','HighlightCode','InsertFrame','EditTd'];
-    
-    k = dialogCmds.length;
-    while (k --) {
-        cmd = dialogCmds[k];
-        editorui[cmd] = function (cmd){
-            cmd = cmd.toLowerCase();
-            return function (editor, iframeUrl, title){
-            
-                iframeUrl = iframeUrl || editor.options.iframeUrlMap[cmd.toLowerCase()] || 'about:blank';
-                iframeUrl = editor.ui.mapUrl(iframeUrl);
-                title = title || editor.options.labelMap[cmd.toLowerCase()] || '';
+    editorui.snapscreen = function(editor, iframeUrl, title){
+            title = title || editor.options.labelMap['snapscreen'] || '';
+            var ui = new editorui.Button({
+                className: 'edui-for-snapscreen',
+                title: title,
+                onclick: function (){
+                    editor.execCommand("snapscreen");
+                }
+            });
+
+            if(browser.ie){
+                iframeUrl = iframeUrl || (editor.options.iframeUrlMap||{})["snapscreen"] || iframeUrlMap["snapscreen"];
+                if(!iframeUrl)return;
                 var dialog = new editorui.Dialog({
-                    iframeUrl: iframeUrl,
-                    autoReset: true,
-                    draggable: true,
+                    iframeUrl: editor.ui.mapUrl(iframeUrl),
                     editor: editor,
-                    className: 'edui-for-' + cmd,
+                    className: 'edui-for-snapscreen',
                     title: title,
                     buttons: [{
                         className: 'edui-okbutton',
@@ -333,86 +257,36 @@
                         onclick: function (){
                             dialog.close(false);
                         }
-                    }],
-                    onok: function (){},
-                    oncancel: function (){},
-                    onclose: function (t, ok){
-                        if (ok) {
-                            return this.onok();
-                        } else {
-                            return this.oncancel();
-                        }
-                    }
+                    }]
+
                 });
                 dialog.render();
-                var ui = new editorui.Button({
-                    className: 'edui-for-' + cmd,
-                    title: title,
-                    onclick: function (){
-                        dialog.open();
-                    }
-                });
-                editor.addListener('selectionchange', function (){
-                    var state = editor.queryCommandState(cmd);
-                    if (state == -1) {
-                        ui.setDisabled(true);
-                    } else {
-
-                        ui.setChecked(state);
-                        
-
-                        ui.setDisabled(false);
-                    }
-                });
-                return ui;
-            };
-        }(cmd);
-    }
-    editorui.WordImage = function(editor){
-        var ui = new editorui.Button({
-            className: 'edui-for-wordimage',
-            title: "图片转存",
-            onclick: function (){
-                editor.execCommand("wordimage","word_img");
-                editor.ui._dialogs['wordImageDialog'].open();
-
+                editor.ui._dialogs["snapscreenDialog"] = dialog;
             }
-        });
-        editor.addListener('selectionchange', function (){
-            var state = editor.queryCommandState("wordimage","word_img");
-            //if(console)console.log(state);
-            if (state == -1) {
-                ui.setDisabled(true);
-            } else {
-                ui.setDisabled(false);
-                ui.setChecked(state);
-            }
-        });
-        return ui;
-    };
-
-    editorui.FontFamily = function (editor, list, title){
-        list = list || editor.options.listMap['fontfamily'] || [];
-        title = title || editor.options.labelMap['fontfamily'] || '';
-        var items = [];
-        for (var i=0; i<list.length; i++) {
-            var font = list[i];
-            var fonts = editor.options.fontMap[font];
-            var value = '"' + font + '"';
-            var regex = new RegExp(font, 'i');
-            if (fonts) {
-                value = '"' + fonts.join('","') + '"';
-                regex = new RegExp('(?:\\|)' + fonts.join('|') + '(?:\\|)', 'i');
-            }
-            items.push({
-                label: font,
-                value: value,
-                regex: regex,
-                renderLabelHtml: function (){
-                    return '<div class="edui-label %%-label" style="font-family:' +
-                        utils.unhtml(this.value) + '">' + (this.label || '') + '</div>';
-                }
+            editor.addListener('selectionchange',function(){
+                ui.setDisabled( editor.queryCommandState('snapscreen') == -1);
             });
+            return ui;
+        };
+
+
+
+    editorui.fontfamily = function (editor, list, title){
+        list = list || editor.options['fontfamily'] || [];
+        title = title || editor.options.labelMap['fontfamily'] || '';
+
+        for(var i=0,ci,items=[];ci=list[i++];){
+
+            (function(key,val){
+                items.push({
+                    label: key,
+                    value: val,
+                    renderLabelHtml: function (){
+                        return '<div class="edui-label %%-label" style="font-family:' +
+                            utils.unhtml(this.value.join(',')) + '">' + (this.label || '') + '</div>';
+                    }
+                });
+            })(ci[0],ci[1])
         }
         var ui = new editorui.Combox({
             editor:editor,
@@ -424,17 +298,13 @@
                 this.showPopup();
             },
             title: title,
-            initValue: editor.options.ComboxInitial.FONT_FAMILY,
+            initValue: title,
             className: 'edui-for-fontfamily',
             indexByValue: function (value){
                 if(value){
-                    value = '|' + value.replace(/,/g, '|').replace(/"/g, '') + '|';
-                    value.replace(/\s*|\s*/g, '|');
-                    for (var i=0; i<this.items.length; i++) {
-                        var item = this.items[i];
-                        if (item.regex.test(value)) {
+                    for(var i=0,ci;ci=this.items[i];i++){
+                        if(ci.value.join(',').indexOf(value) != -1)
                             return i;
-                        }
                     }
                 }
 
@@ -460,9 +330,9 @@
         return ui;
     };
 
-    editorui.FontSize = function (editor, list, title){
-        list = list || editor.options.listMap['fontsize'] || [];
+    editorui.fontsize = function (editor, list, title){
         title = title || editor.options.labelMap['fontsize'] || '';
+        list = list || editor.options['fontsize'] || [];
         var items = [];
         for (var i=0; i<list.length; i++) {
             var size = list[i] + 'px';
@@ -470,7 +340,7 @@
                 label: size,
                 value: size,
                 renderLabelHtml: function (){
-                    return '<div class="edui-label %%-label" style="font-size:' +
+                    return '<div class="edui-label %%-label" style="line-height:1;font-size:' +
                         this.value + '">' + (this.label || '') + '</div>';
                 }
             });
@@ -479,7 +349,7 @@
             editor:editor,
             items: items,
             title: title,
-            initValue: editor.options.ComboxInitial.FONT_SIZE,
+            initValue: title,
             onselect: function (t,index){
                 editor.execCommand('FontSize', this.items[index].value);
             },
@@ -496,59 +366,17 @@
                 } else {
                     ui.setDisabled(false);
                     ui.setValue(editor.queryCommandValue('FontSize'));
-                } 
+                }
             }
 
         });
         return ui;
     };
-//    editorui.RowSpacing = function (editor, list, title){
-//        list = list || editor.options.listMap['rowspacing'] || [];
-//        title = title || editor.options.labelMap['rowspacing'] || '';
-//        var items = [];
-//        for (var i=0; i<list.length; i++) {
-//            var tag = list[i] + 'px';
-//            var value = list[i];
-//            items.push({
-//                label: tag,
-//                value: value,
-//                renderLabelHtml: function (){
-//                    return '<div class="edui-label %%-label" style="font-size:12px">' + (this.label || '') + '</div>';
-//                }
-//            });
-//        }
-//        var ui = new editorui.Combox({
-//            editor:editor,
-//            items: items,
-//            title: title,
-//            initValue: editor.options.ComboxInitial.ROW_SPACING,
-//            onselect: function (t,index){
-//                editor.execCommand('RowSpacing', this.items[index].value);
-//            },
-//            onbuttonclick: function (){
-//                this.showPopup();
-//            },
-//            className: 'edui-for-rowspacing'
-//        });
-//        editor.addListener('selectionchange', function (type, causeByUi, uiReady){
-//            if(!uiReady){
-//                var state = editor.queryCommandState('RowSpacing');
-//                if (state == -1) {
-//                    ui.setDisabled(true);
-//                } else {
-//                    ui.setDisabled(false);
-//                    ui.setValue(editor.queryCommandValue('RowSpacing'));
-//                }
-//            }
-//
-//        });
-//        return ui;
-//    };
-    editorui.Paragraph = function (editor, list, title){
-        list = list || editor.options.listMap['paragraph'] || [];
+
+    editorui.paragraph = function (editor, list, title){
         title = title || editor.options.labelMap['paragraph'] || '';
-        var items = [];
-        for (var i=0; i<list.length; i++) {
+        list = list || editor.options['paragraph'] || [];
+        for (var i=0,items = []; i<list.length; i++) {
             var item = list[i].split(':');
             var tag = item[0];
             var label = item[1];
@@ -564,7 +392,7 @@
             editor:editor,
             items: items,
             title: title,
-            initValue: editor.options.ComboxInitial.PARAGRAPH,
+            initValue: title,
             className: 'edui-for-paragraph',
             onselect: function (t,index){
                 editor.execCommand('Paragraph', this.items[index].value);
@@ -596,10 +424,11 @@
 
 
     //自定义标题
-    editorui.CustomStyle = function(editor,list,title){
-        list = list || editor.options.listMap['customstyle'] || [];
+    editorui.customstyle = function(editor,list,title){
+        list = list || editor.options['customstyle'];
         title = title || editor.options.labelMap['customstyle'] || '';
-
+        if(!list)
+            return;
         for(var i=0,items = [],t;t=list[i++];){
             (function(ti){
                 items.push({
@@ -614,12 +443,12 @@
             })(t)
 
         }
-      
+
         var ui = new editorui.Combox({
             editor:editor,
             items: items,
             title: title,
-            initValue:editor.options.ComboxInitial.CUSTOMSTYLE,
+            initValue:title,
             className: 'edui-for-customstyle',
             onselect: function (t,index){
                 editor.execCommand('customstyle', this.items[index].value);
@@ -656,14 +485,14 @@
         });
         return ui;
     };
-    editorui.InsertTable = function (editor, iframeUrl, title){
-        iframeUrl = iframeUrl || editor.options.iframeUrlMap['inserttable'] || 'about:blank';
-        iframeUrl = editor.ui.mapUrl(iframeUrl);
+    editorui.inserttable = function (editor, iframeUrl, title){
+        iframeUrl = iframeUrl || (editor.options.iframeUrlMap||{})['inserttable'] || iframeUrlMap['inserttable'];
         title = title || editor.options.labelMap['inserttable'] || '';
+        if(!iframeUrl){
+            return
+        }
         var dialog = new editorui.Dialog({
-            iframeUrl: iframeUrl,
-            autoReset: true,
-            draggable: true,
+            iframeUrl: editor.ui.mapUrl(iframeUrl),
             editor: editor,
             className: 'edui-for-inserttable',
             title: title,
@@ -679,19 +508,11 @@
                 onclick: function (){
                     dialog.close(false);
                 }
-            }],
-            onok: function (){},
-            oncancel: function (){},
-            onclose: function (t,ok){
-                if (ok) {
-                    return this.onok();
-                } else {
-                    return this.oncancel();
-                }
-            }
+            }]
+
         });
         dialog.render();
-        editor.tableDialog = dialog;
+        editor.ui._dialogs['inserttableDialog'] = dialog;
         var ui = new editorui.TableButton({
             editor:editor,
             title: title,
@@ -707,36 +528,14 @@
             }
         });
         editor.addListener('selectionchange', function (){
-            var state = editor.queryCommandState('inserttable');
-            if (state == -1) {
-                ui.setDisabled(true);
-            } else {
-                ui.setDisabled(false);
-            }
+            ui.setDisabled(editor.queryCommandState('inserttable') == -1);
         });
         return ui;
     };
 
-
-    editorui.AutoTypeSet = function (editor, iframeUrl, title){
-        title = title || editor.options.labelMap['autotypeset'] || '';
-        var ui = new editorui.AutoTypeSetButton({
-            editor:editor,
-            title: title,
-            className: 'edui-for-autotypeset',
-            onbuttonclick: function (){
-                editor.execCommand('autotypeset')
-            }
-        });
-        editor.addListener('selectionchange', function (){
-            ui.setDisabled(editor.queryCommandState('autotypeset') == -1);
-        });
-        return ui;
-    };
-
-
-    editorui.LineHeight = function (editor, title){
-        for(var i=0,ci,items=[];ci = editor.options.listMap.lineheight[i++];){
+    editorui.lineheight = function (editor, title){
+        var val = editor.options.lineheight;
+        for(var i=0,ci,items=[];ci = val[i++];){
             items.push({
                 //todo:写死了
                 label : ci == '1' ? '默认' : ci,
@@ -769,165 +568,90 @@
         });
         return ui;
     };
-    editorui.RowSpacingTop = function (editor, title){
-        for(var i=0,ci,items=[];ci = editor.options.listMap.rowspacing[i++];){
-            items.push({
-                label : ci,
-                value: ci,
-                onclick:function(){
-                    editor.execCommand("rowspacing", this.value,'top');
-                }
-            })
-        }
-        var ui = new editorui.MenuButton({
-            editor:editor,
-            className : 'edui-for-rowspacingtop',
-            title : title || editor.options.labelMap['rowspacingtop'] || '段前间距',
-            items :items,
-            onbuttonclick: function (){
-                var value = editor.queryCommandValue('rowspacing','top') || this.value;
-                editor.execCommand("rowspacing", value,'top');
-            }
-        });
-        editor.addListener('selectionchange', function (){
-            var state = editor.queryCommandState('rowspacing','top');
-            if (state == -1) {
-                ui.setDisabled(true);
-            } else {
-                ui.setDisabled(false);
-                var value = editor.queryCommandValue('rowspacing','top');
-                value && ui.setValue((value + '').replace(/%/,''));
-                ui.setChecked(state)
-            }
-        });
-        return ui;
-    };
-    editorui.RowSpacingBottom = function (editor, title){
-        for(var i=0,ci,items=[];ci = editor.options.listMap.rowspacing[i++];){
-            items.push({
-                label : ci,
-                value: ci,
-                onclick:function(){
-                    editor.execCommand("rowspacing", this.value,'bottom');
-                }
-            })
-        }
-        var ui = new editorui.MenuButton({
-            editor:editor,
-            className : 'edui-for-rowspacingbottom',
-            title : title || editor.options.labelMap['rowspacingbottom'] || '段后间距',
-            items :items,
-            onbuttonclick: function (){
-                var value = editor.queryCommandValue('rowspacing','bottom') || this.value;
-                editor.execCommand("rowspacing", value,'bottom');
-            }
-        });
-        editor.addListener('selectionchange', function (){
-            var state = editor.queryCommandState('rowspacing','bottom');
-            if (state == -1) {
-                ui.setDisabled(true);
-            } else {
-                ui.setDisabled(false);
-                var value = editor.queryCommandValue('rowspacing','bottom');
-                value && ui.setValue((value + '').replace(/%/,''));
-                ui.setChecked(state)
-            }
-        });
-        return ui;
-    };
-    editorui.InsertOrderedList = function (editor, title){
-        title = title || editor.options.labelMap['insertorderedlist'] || '';
-        var _onMenuClick = function(){
-            editor.execCommand("InsertOrderedList", this.value);
-        };
-        var ui = new editorui.MenuButton({
-            editor:editor,
-            className : 'edui-for-insertorderedlist',
-            title : title,
-            items :
-                [{
-                    label: '1,2,3...',
-                    value: 'decimal',
-                    onclick : _onMenuClick
-                },{
-                    label: 'a,b,c ...',
-                    value: 'lower-alpha',
-                    onclick : _onMenuClick
-                },{
-                    label: 'i,ii,iii...',
-                    value: 'lower-roman',
-                    onclick : _onMenuClick
-                },{
-                    label: 'A,B,C',
-                    value: 'upper-alpha',
-                    onclick : _onMenuClick
-                },{
-                    label: 'I,II,III...',
-                    value: 'upper-roman',
-                    onclick : _onMenuClick
-                }],
-            onbuttonclick: function (){
-                var value = editor.queryCommandValue('InsertOrderedList') || this.value;
-                editor.execCommand("InsertOrderedList", value);
-            }
-        });
-        editor.addListener('selectionchange', function (){
-            var state = editor.queryCommandState('InsertOrderedList');
-            if (state == -1) {
-                ui.setDisabled(true);
-            } else {
-                ui.setDisabled(false);
-                var value = editor.queryCommandValue('InsertOrderedList');
-                ui.setValue(value);
-                 ui.setChecked(state)
-            }
-        });
-        return ui;
-    };
 
-    editorui.InsertUnorderedList = function (editor, title){
-        title = title || editor.options.labelMap['insertunorderedlist'] || '';
-        var _onMenuClick = function(){
-            editor.execCommand("InsertUnorderedList", this.value);
-        };
-        var ui = new editorui.MenuButton({
-            editor:editor,
-            className : 'edui-for-insertunorderedlist',
-            title: title,
-            items:
-                [{
-                    label: '○ 小圆圈',
-                    value: 'circle',
-                    onclick : _onMenuClick
-                },{
-                    label: '● 小圆点',
-                    value: 'disc',
-                    onclick : _onMenuClick
-                },{
-                    label: '■ 小方块',
-                    value: 'square',
-                    onclick : _onMenuClick
-                }],
-            onbuttonclick: function (){
-                var value = editor.queryCommandValue('InsertUnorderedList') || this.value;
-                editor.execCommand("InsertUnorderedList", value);
+    var rowspacings = ['top','bottom'];
+    for(var r=0,ri;ri=rowspacings[r++];){
+        (function(cmd){
+            editorui['rowspacing' + cmd] = function(editor){
+                var val = editor.options['rowspacing'+cmd] ;
+
+                for(var i=0,ci,items=[];ci = val[i++];){
+                    items.push({
+                        label : ci,
+                        value: ci,
+                        onclick:function(){
+                            editor.execCommand("rowspacing", this.value,cmd);
+                        }
+                    })
+                }
+                var ui = new editorui.MenuButton({
+                    editor:editor,
+                    className : 'edui-for-rowspacing'+cmd,
+                    title : editor.options.labelMap['rowspacing'+cmd],
+                    items :items,
+                    onbuttonclick: function (){
+                        var value = editor.queryCommandValue('rowspacing',cmd) || this.value;
+                        editor.execCommand("rowspacing", value,cmd);
+                    }
+                });
+                editor.addListener('selectionchange', function (){
+                    var state = editor.queryCommandState('rowspacing',cmd);
+                    if (state == -1) {
+                        ui.setDisabled(true);
+                    } else {
+                        ui.setDisabled(false);
+                        var value = editor.queryCommandValue('rowspacing',cmd);
+                        value && ui.setValue((value + '').replace(/%/,''));
+                        ui.setChecked(state)
+                    }
+                });
+                return ui;
             }
-        });
-        editor.addListener('selectionchange', function (){
-            var state = editor.queryCommandState('InsertUnorderedList');
-            if (state == -1) {
-                ui.setDisabled(true);
-            } else {
-                ui.setDisabled(false);
-                var value = editor.queryCommandValue('InsertUnorderedList');
-                ui.setValue(value);
-                ui.setChecked(state)
-            }
-        });
-        return ui;
-    };
-    
-    editorui.FullScreen = function (editor, title){
+        })(ri)
+    }
+    //有序，无序列表
+    var lists = ['insertorderedlist','insertunorderedlist'];
+    for(var l = 0,cl;cl = lists[l++]; ){
+        (function(cmd){
+            editorui[cmd] =function (editor){
+                var vals = editor.options[cmd],
+                    _onMenuClick = function(){
+                        editor.execCommand(cmd, this.value);
+                    };
+                for(var i=0,items=[],ci;ci=vals[i++];){
+                    items.push({
+                        label : ci[0],
+                        value : ci[1],
+                        onclick : _onMenuClick
+                    })
+                }
+                var ui = new editorui.MenuButton({
+                    editor:editor,
+                    className : 'edui-for-'+cmd,
+                    title : editor.options.labelMap[cmd] || '',
+                    'items' :items,
+                    onbuttonclick: function (){
+                        var value = editor.queryCommandValue(cmd) || this.value;
+                        editor.execCommand(cmd, value);
+                    }
+                });
+                editor.addListener('selectionchange', function (){
+                    var state = editor.queryCommandState(cmd);
+                    if (state == -1) {
+                        ui.setDisabled(true);
+                    } else {
+                        ui.setDisabled(false);
+                        var value = editor.queryCommandValue(cmd);
+                        ui.setValue(value);
+                        ui.setChecked(state)
+                    }
+                });
+                return ui;
+            };
+        })(cl)
+    }
+
+    editorui.fullscreen = function (editor, title){
         title = title || editor.options.labelMap['fullscreen'] || '';
         var ui = new editorui.Button({
             className: 'edui-for-fullscreen',
@@ -947,26 +671,33 @@
         return ui;
     };
 
-    
-    editorui.Emotion = function(editor, iframeUrl, title){
-        title = title || editor.options.labelMap['emotion'] || '';
-        iframeUrl = iframeUrl || editor.options.iframeUrlMap['emotion'] || 'about:blank';
-        iframeUrl = editor.ui.mapUrl(iframeUrl);
+    // 表情
+    editorui.emotion = function(editor, iframeUrl, title){
         var ui = new editorui.MultiMenuPop({
-            title: title,
+            title: title || editor.options.labelMap.emotion || '',
             editor: editor,
             className: 'edui-for-emotion',
-            iframeUrl: iframeUrl
+            iframeUrl: editor.ui.mapUrl(iframeUrl || (editor.options.iframeUrlMap||{})['emotion'] || iframeUrlMap['emotion'])
         });
         editor.addListener('selectionchange', function (){
+            ui.setDisabled(editor.queryCommandState('emotion') == -1)
+        });
+        return ui;
+    };
 
-            var state = editor.queryCommandState('emotion');
-            if (state == -1) {
-                ui.setDisabled(true);
-            } else {
-                ui.setDisabled(false);
+    editorui.autotypeset = function (editor){
+        var ui = new editorui.AutoTypeSetButton({
+            editor:editor,
+            title: editor.options.labelMap['autotypeset'] || '',
+            className: 'edui-for-autotypeset',
+            onbuttonclick: function (){
+                editor.execCommand('autotypeset')
             }
         });
-        return ui; 
+        editor.addListener('selectionchange', function (){
+            ui.setDisabled(editor.queryCommandState('autotypeset') == -1);
+        });
+        return ui;
     };
+
 })();

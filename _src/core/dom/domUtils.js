@@ -337,7 +337,9 @@
         clearEmptySibling : function(node, ingoreNext, ingorePre) {
             function clear(next, dir) {
                 var tmpNode;
-                while(next && !domUtils.isBookmarkNode(next) && (domUtils.isEmptyInlineElement(next) || domUtils.isWhitespace(next) )){
+                while(next && !domUtils.isBookmarkNode(next) && (domUtils.isEmptyInlineElement(next)
+                    //这里不能把空格算进来会吧空格干掉，出现文字间的空格丢掉了
+                    || !new RegExp('[^\t\n\r' + domUtils.fillChar + ']').test(next.nodeValue) )){
                     tmpNode = next[dir];
                     domUtils.remove(next);
                     next = tmpNode;
@@ -1189,8 +1191,11 @@
         //判断是否有额外属性
         hasNoAttributes : function(node){
             return browser.ie ? /^<\w+\s*?>/.test(node.outerHTML) :node.attributes.length == 0;
+        },
+        //判断是否是编辑器自定义的参数
+        isCustomeNode : function(node){
+            return node.nodeType == 1 && node.getAttribute('_ue_div_script');
         }
-
 
     }; 
 

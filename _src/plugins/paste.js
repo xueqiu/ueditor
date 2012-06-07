@@ -69,7 +69,7 @@
         var me = this;
         var word_img_flag = {flag:""};
 
-        var pasteplain = me.options.pasteplain;
+        var pasteplain = me.options.pasteplain === true;
         var modify_num = {flag:""};
         me.commands['pasteplain'] = {
             queryCommandState: function (){
@@ -193,8 +193,8 @@
                    html = {'html':html};
 
                    me.fireEvent('beforepaste',html);
-
-                   me.execCommand( 'insertHtml',html.html);
+                    //不用在走过滤了
+                   me.execCommand( 'insertHtml',html.html,true);
 
 	               me.fireEvent("afterpaste");
 
@@ -221,26 +221,6 @@
                     }
                     getClipboardData.call( me, function( div ) {
                         filter(div);
-                        function hideMsg(){
-                             me.ui.hideToolbarMsg();
-                             me.removeListener("selectionchange",hideMsg);
-                        }
-                        if ( modify_num.flag && me.ui){
-                            me.ui.showToolbarMsg( me.options.messages.pasteMsg, word_img_flag.flag );
-                            modify_num.flag = "";
-                            //trance:为了解决fireevent  (selectionchange)事件的延时
-                            setTimeout(function(){
-                                me.addListener("selectionchange",hideMsg);
-                            },100);
-                        }
-                         if ( word_img_flag.flag && !me.queryCommandState("pasteplain") && me.ui){
-                            me.ui.showToolbarMsg( me.options.messages.pasteWordImgMsg,true);
-                             word_img_flag.flag = '';
-                            //trance:为了解决fireevent  (selectionchange)事件的延时
-                            setTimeout(function(){
-                                me.addListener("selectionchange",hideMsg);
-                            },100);
-                        }
                     } );
 
 

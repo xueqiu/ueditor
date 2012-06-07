@@ -50,10 +50,15 @@
                 '</div>';
         },
         getContentHtmlTpl: function (){
-            if (typeof this.content == 'string') {
-                return this.content;
+            if(this.content){
+                if (typeof this.content == 'string') {
+                    return this.content;
+                }
+                return this.content.renderHtml();
+            }else{
+                return ''
             }
-            return this.content.renderHtml();
+
         },
         _UIBase_postRender: UIBase.prototype.postRender,
         postRender: function (){

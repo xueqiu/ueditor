@@ -5,18 +5,19 @@
 //配置快捷键
 UE.plugins['shortcutkeys'] = function(){
     var me = this,
-        shortcutkeys =  utils.extend({
-    		 "ctrl+66" : "Bold" //^B
-        	,"ctrl+90" : "Undo" //undo
-        	,"ctrl+89" : "Redo" //redo
-       		,"ctrl+73" : "Italic" //^I
-       		,"ctrl+85" : "Underline" //^U
-        	,"ctrl+shift+67" : "removeformat" //清除格式
-        	,"ctrl+shift+76" : "justify:left" //居左
-        	,"ctrl+shift+82" : "justify:right" //居右
-        	,"ctrl+65" : "selectAll"
+        shortcutkeys = {
+    		"ctrl+66" : "Bold" ,//^B
+        	"ctrl+90" : "Undo" ,//undo
+        	"ctrl+89" : "Redo", //redo
+       		"ctrl+73" : "Italic", //^I
+       		"ctrl+85" : "Underline" ,//^U
+        	"ctrl+shift+67" : "removeformat", //清除格式
+        	"ctrl+shift+76" : "justify:left", //居左
+        	"ctrl+shift+82" : "justify:right", //居右
+        	"ctrl+65" : "selectAll",
+            "ctrl+13" : "autosubmit"//手动提交
 //        	,"9"	   : "indent" //tab
-    	},me.options.shortcutkeys);
+    	};
     me.addListener('keydown',function(type,e){
 
         var keyCode = e.keyCode || e.which,value;
@@ -32,7 +33,6 @@ UE.plugins['shortcutkeys'] = function(){
                     value = shortcutkeys[i].split(':');
                     me.execCommand( value[0],value[1]);
                     domUtils.preventDefault(e)
-
 		        }
 		    }
 		}

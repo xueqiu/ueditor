@@ -120,8 +120,9 @@ UE.plugins['keystrokes'] = function() {
         if (keyCode == 9) {
             range = me.selection.getRange();
             me.undoManger && me.undoManger.save();
-            for (var i = 0,txt = ''; i < me.options.tabSize; i++) {
-                txt += me.options.tabNode;
+
+            for (var i = 0,txt = '',tabSize = me.options.tabSize|| 4,tabNode =  me.options.tabNode || '&nbsp;'; i < tabSize; i++) {
+                txt += tabNode;
             }
             var span = me.document.createElement('span');
             span.innerHTML = txt;

@@ -16,20 +16,21 @@ UE.commands['preview'] = {
             d = w.document,
             css = me.document.getElementById("syntaxhighlighter_css"),
             js = document.getElementById("syntaxhighlighter_js"),
-            style = "<style type='text/css'>" + me.options.initialStyle + "</style>",
+//            style = "<style type='text/css'>" + me.options.initialStyle + "</style>",
+            style = "<style type='text/css'>"+(me.document.getElementById("editorinitialstyle")&&me.document.getElementById("editorinitialstyle").innerHTML)+"</style>",
             cont = me.getContent();
-
         if(browser.ie){
             cont = cont.replace(/<\s*br\s*\/?\s*>/gi,'<br/><br/>')
         }
         d.open();
-        d.write('<html><head>'+style+'<link rel="stylesheet" type="text/css" href="'+me.options.UEDITOR_HOME_URL+utils.unhtml( this.options.iframeCssUrl ) + '"/>'+
+
+        d.write('<html><head>'+style+'<link rel="stylesheet" type="text/css" href="'+utils.unhtml( this.options.iframeCssUrl ) + '"/>'+
                 (css ? '<link rel="stylesheet" type="text/css" href="' + css.href + '"/>' : '')
 
-            + (css ? ' <script type="text/javascript" charset="utf-8" src="'+js.src+'"></script>':'')
+            + (css&&js ? ' <script type="text/javascript" charset="utf-8" src="'+js.src+'"></script>':'')
             +'<title></title></head><body >' +
             cont +
-            (css ? '<script type="text/javascript">'+(baidu.editor.browser.ie ? 'window.onload = function(){SyntaxHighlighter.all()};' : 'SyntaxHighlighter.all();')+
+            (css && js ? '<script type="text/javascript">'+(baidu.editor.browser.ie ? 'window.onload = function(){SyntaxHighlighter.all()};' : 'SyntaxHighlighter.all();')+
                 'setTimeout(function(){' +
                 'for(var i=0,di;di=SyntaxHighlighter.highlightContainers[i++];){' +
                     'var tds = di.getElementsByTagName("td");' +

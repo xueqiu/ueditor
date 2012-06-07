@@ -8,7 +8,14 @@
  *  注意： 引入此功能后，在IE6下会将body的背景图片覆盖掉！
  */
     UE.plugins['autofloat'] = function() {
-        var uiUtils,
+        var me = this,
+            optsAutoFloatEnabled = me.options.autoFloatEnabled !== false;
+
+        //如果不固定toolbar的位置，则直接退出
+        if(!optsAutoFloatEnabled){
+            return;
+        }
+        var uiUtils = UE.ui.uiUtils,
        		LteIE6 = browser.ie && browser.version <= 6,
             quirks = browser.quirks;
 
@@ -21,7 +28,7 @@
                   message: 'autofloat功能依赖于UEditor UI。autofloat定义位置: _src/plugins/autofloat.js'
               });
            }
-            uiUtils = UE.ui.uiUtils;
+
 
            return 1;
        }
@@ -30,15 +37,10 @@
            docStyle.backgroundImage = 'url("about:blank")';
            docStyle.backgroundAttachment = 'fixed';
         }
-		var optsAutoFloatEnabled = this.options.autoFloatEnabled;
 
-        //如果不固定toolbar的位置，则直接退出
-        if(!optsAutoFloatEnabled){
-			return;
-		}
 
-		var me = this,
-			bakCssText,
+
+		var	bakCssText,
 			placeHolder = document.createElement('div'),
             toolbarBox,orgTop,
             getPosition,
@@ -58,8 +60,9 @@
                 toolbarBox.style.top = (document.body.scrollTop||document.documentElement.scrollTop) - orgTop + 'px';
 			} else {
                 if (browser.ie7Compat && flag) {
-                   flag = false;
-                   toolbarBox.style.left =  getPosition(toolbarBox).left - document.documentElement.getBoundingClientRect().left+2  + 'px';
+                    flag = false;
+                    toolbarBox.style.left =  domUtils.getXY(toolbarBox).x - document.documentElement.getBoundingClientRect().left+2  + 'px';
+
                 }
                 if(toolbarBox.style.position != 'fixed'){
                     toolbarBox.style.position = 'fixed';

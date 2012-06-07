@@ -9,7 +9,7 @@
 UE.plugins['autoheight'] = function () {
     var me = this;
     //提供开关，就算加载也可以关闭
-    me.autoHeightEnabled = me.options.autoHeightEnabled;
+    me.autoHeightEnabled = me.options.autoHeightEnabled !== false ;
     if (!me.autoHeightEnabled)return;
 
     var bakOverflow,

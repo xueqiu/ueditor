@@ -20,7 +20,8 @@
             this.initUIBase();
             this._initToolbars();
             var editor = this.editor,
-                    iframeUrlMap = editor.options.iframeUrlMap;
+                me = this;
+
             editor.addListener( 'ready', function () {
                 baidu.editor.dom.domUtils.on( editor.window, 'scroll', function () {
                     baidu.editor.ui.Popup.postHide();
@@ -32,11 +33,25 @@
                 }
                 if ( editor.options.wordCount ) {
                     editor.ui.getDom( 'wordcount' ).innerHTML = '字数统计';
+                    //为wordcount捕获中文输入法的空格
+                    editor.addListener('keyup',function(type,evt){
+                        var keyCode = evt.keyCode || evt.which;
+                        if(keyCode == 32){
+                            me._wordCount();
+                        }
+                    });
+                }
+                if(!editor.options.elementPathEnabled && !editor.options.wordCount){
+                    editor.ui.getDom( 'elementpath' ).style.display="none";
+                    editor.ui.getDom( 'wordcount' ).style.display="none";
                 }
 
                 if(!editor.selection.isFocus())return;
                 editor.fireEvent( 'selectionchange', false, true );
+
+
             } );
+
             editor.addListener( 'mousedown', function ( t, evt ) {
                 var el = evt.target || evt.srcElement;
                 baidu.editor.ui.Popup.postHide( el );
@@ -44,358 +59,45 @@
             editor.addListener( 'contextmenu', function ( t, evt ) {
                 baidu.editor.ui.Popup.postHide();
             } );
-            var me = this;
             editor.addListener( 'selectionchange', function () {
-                if(!editor.selection.isFocus())return;
-                me._updateElementPath();
-                //字数统计
-                me._wordCount();
-            } );
-            editor.addListener( 'sourcemodechanged', function ( t, mode ) {
+                //if(!editor.selection.isFocus())return;
                 if ( editor.options.elementPathEnabled ) {
-                    if ( mode ) {
-                        me.disableElementPath();
-                    } else {
-                        me.enableElementPath();
-                    }
+                    me[(editor.queryCommandState('elementpath') == -1 ? 'dis':'en') + 'ableElementPath']()
                 }
                 if ( editor.options.wordCount ) {
-                    if ( mode ) {
-                        me.disableWordCount();
-                    } else {
-                        me.enableWordCount();
-                    }
-                }
-
-
-            } );
-            // 超链接的编辑器浮层
-            var linkDialog = new baidu.editor.ui.Dialog( {
-                iframeUrl: iframeUrlMap ? editor.ui.mapUrl(iframeUrlMap.link ):"",
-                autoReset: true,
-                draggable: true,
-                editor: editor,
-                className: 'edui-for-link',
-                title: '超链接',
-                buttons: [
-                    {
-                        className: 'edui-okbutton',
-                        label: '确认',
-                        onclick: function () {
-                            linkDialog.close( true );
-                        }
-                    },
-                    {
-                        className: 'edui-cancelbutton',
-                        label: '取消',
-                        onclick: function () {
-                            linkDialog.close( false );
-                        }
-                    }
-                ],
-                onok: function () {
-                },
-                oncancel: function () {
-                },
-                onclose: function ( t, ok ) {
-                    if ( ok ) {
-                        return this.onok();
-                    } else {
-                        return this.oncancel();
-                    }
+                    me[(editor.queryCommandState('wordcount') == -1 ? 'dis':'en') + 'ableWordCount']()
                 }
 
             } );
-            linkDialog.render();
-            // 图片的编辑器浮层
-            var imgDialog = new baidu.editor.ui.Dialog( {
-                iframeUrl: iframeUrlMap?editor.ui.mapUrl(iframeUrlMap.insertimage ):"",
-                autoReset: true,
-                draggable: true,
-                editor: editor,
-                className: 'edui-for-insertimage',
-                title: '图片',
-                buttons: [
-                    {
-                        className: 'edui-okbutton',
-                        label: '确认',
-                        onclick: function () {
-                            imgDialog.close( true );
-                        }
-                    },
-                    {
-                        className: 'edui-cancelbutton',
-                        label: '取消',
-                        onclick: function () {
-                            imgDialog.close( false );
-                        }
-                    }
-                ],
-                onok: function () {
-                },
-                oncancel: function () {
-                },
-                onclose: function ( t, ok ) {
-                    if ( ok ) {
-                        return this.onok();
-                    } else {
-                        return this.oncancel();
-                    }
-                }
-
-            } );
-            imgDialog.render();
-            //锚点
-            var anchorDialog = new baidu.editor.ui.Dialog( {
-                iframeUrl: iframeUrlMap?editor.ui.mapUrl( iframeUrlMap.anchor ):"",
-                autoReset: true,
-                draggable: true,
-                editor: editor,
-                className: 'edui-for-anchor',
-                title: '锚点',
-                buttons: [
-                    {
-                        className: 'edui-okbutton',
-                        label: '确认',
-                        onclick: function () {
-                            anchorDialog.close( true );
-                        }
-                    },
-                    {
-                        className: 'edui-cancelbutton',
-                        label: '取消',
-                        onclick: function () {
-                            anchorDialog.close( false );
-                        }
-                    }
-                ],
-                onok: function () {
-                },
-                oncancel: function () {
-                },
-                onclose: function ( t, ok ) {
-                    if ( ok ) {
-                        return this.onok();
-                    } else {
-                        return this.oncancel();
-                    }
-                }
-
-            } );
-            anchorDialog.render();
-            // video
-            var videoDialog = new baidu.editor.ui.Dialog( {
-                iframeUrl: iframeUrlMap?editor.ui.mapUrl( iframeUrlMap.insertvideo ):"",
-                autoReset: true,
-                draggable: true,
-                editor: editor,
-                className: 'edui-for-insertvideo',
-                title: '视频',
-                buttons: [
-                    {
-                        className: 'edui-okbutton',
-                        label: '确认',
-                        onclick: function () {
-                            videoDialog.close( true );
-                        }
-                    },
-                    {
-                        className: 'edui-cancelbutton',
-                        label: '取消',
-                        onclick: function () {
-                            videoDialog.close( false );
-                        }
-                    }
-                ],
-                onok: function () {
-                },
-                oncancel: function () {
-                },
-                onclose: function ( t, ok ) {
-                    if ( ok ) {
-                        return this.onok();
-                    } else {
-                        return this.oncancel();
-                    }
-                }
-
-            } );
-            videoDialog.render();
-
-            //本地word图片上传
-            var wordImageDialog = new baidu.editor.ui.Dialog( {
-                iframeUrl: iframeUrlMap?editor.ui.mapUrl( iframeUrlMap.wordimage ):"",
-                autoReset: true,
-                draggable: true,
-                editor: editor,
-                className: 'edui-for-wordimage',
-                title: '图片转存',
-                buttons: [
-                    {
-                        className: 'edui-okbutton',
-                        label: '确认',
-                        onclick: function () {
-                            wordImageDialog.close( true );
-                        }
-                    },
-                    {
-                        className: 'edui-cancelbutton',
-                        label: '取消',
-                        onclick: function () {
-                            wordImageDialog.close( false );
-                        }
-                    }
-                ],
-                onok: function () {
-                },
-                oncancel: function () {
-                },
-                onclose: function ( t, ok ) {
-                    if ( ok ) {
-                        return this.onok();
-                    } else {
-                        return this.oncancel();
-                    }
-                }
-            } );
-            wordImageDialog.render();
-            //挂载dialog框到ui实例
-            me._dialogs['wordImageDialog'] = wordImageDialog;
-
-            var tdDialog = new baidu.editor.ui.Dialog({
-                iframeUrl: iframeUrlMap?me.mapUrl(iframeUrlMap['edittd']):'about:blank',
-                autoReset: true,
-                draggable: true,
-                editor:editor,
-                className: 'edui-for-edittd',
-                title: "单元格",
-                buttons: [{
-                    className: 'edui-okbutton',
-                    label: '确认',
-                    onclick: function (){
-                        tdDialog.close(true);
-                    }
-                }, {
-                    className: 'edui-cancelbutton',
-                    label: '取消',
-                    onclick: function (){
-                        tdDialog.close(false);
-                    }
-                }],
-                onok: function (){},
-                oncancel: function (){},
-                onclose: function (t,ok){
-                    if (ok) {
-                        return this.onok();
-                    } else {
-                        return this.oncancel();
-                    }
-                }
-            });
-            tdDialog.render();
-            me._dialogs['tdDialog'] = tdDialog;
-
-            // map
-            var mapDialog = new baidu.editor.ui.Dialog( {
-                iframeUrl: iframeUrlMap?editor.ui.mapUrl(iframeUrlMap.map ):"",
-                autoReset: true,
-                draggable: true,
-                editor: editor,
-                className: 'edui-for-map',
-                title: '地图',
-                buttons: [
-                    {
-                        className: 'edui-okbutton',
-                        label: '确认',
-                        onclick: function () {
-                            mapDialog.close( true );
-                        }
-                    },
-                    {
-                        className: 'edui-cancelbutton',
-                        label: '取消',
-                        onclick: function () {
-                            mapDialog.close( false );
-                        }
-                    }
-                ],
-                onok: function () {
-                },
-                oncancel: function () {
-                },
-                onclose: function ( t, ok ) {
-                    if ( ok ) {
-                        return this.onok();
-                    } else {
-                        return this.oncancel();
-                    }
-                }
-
-            } );
-            mapDialog.render();
-            // map
-            var gmapDialog = new baidu.editor.ui.Dialog( {
-                iframeUrl: iframeUrlMap?editor.ui.mapUrl( iframeUrlMap.gmap ):"",
-                autoReset: true,
-                draggable: true,
-                editor: editor,
-                className: 'edui-for-gmap',
-                title: 'Google地图',
-                buttons: [
-                    {
-                        className: 'edui-okbutton',
-                        label: '确认',
-                        onclick: function () {
-                            gmapDialog.close( true );
-                        }
-                    },
-                    {
-                        className: 'edui-cancelbutton',
-                        label: '取消',
-                        onclick: function () {
-                            gmapDialog.close( false );
-                        }
-                    }
-                ],
-                onok: function () {
-                },
-                oncancel: function () {
-                },
-                onclose: function ( t, ok ) {
-                    if ( ok ) {
-                        return this.onok();
-                    } else {
-                        return this.oncancel();
-                    }
-                }
-
-            } );
-            gmapDialog.render();
             var popup = new baidu.editor.ui.Popup( {
                 editor:editor,
                 content: '',
                 className: 'edui-bubble',
                 _onEditButtonClick: function () {
                     this.hide();
-                    linkDialog.open();
+                    editor.ui._dialogs.linkDialog.open();
                 },
                 _onImgEditButtonClick: function () {
                     this.hide();
-                    var nodeStart = editor.selection.getRange().getClosedNode();
+                    var nodeStart = editor.selection.getRange().getClosedNode(),
+                        dialogs = editor.ui._dialogs;
                     var img = baidu.editor.dom.domUtils.findParentByTagName( nodeStart, "img", true );
                     if ( img && img.className.indexOf( "edui-faked-video" ) != -1 ) {
-                        videoDialog.open();
-                    } else if ( img && img.src.indexOf( "http://api.map.baidu.com" ) != -1 ) {
-                        mapDialog.open();
+                        dialogs.insertvideoDialog.open();
+                    }else if(img && img.className.indexOf( "edui-faked-webapp" ) != -1){
+                        dialogs.webappDialog.open();
+                    }else if ( img && img.src.indexOf( "http://api.map.baidu.com" ) != -1 ) {
+                        dialogs.mapDialog.open();
                     } else if ( img && img.src.indexOf( "http://maps.google.com/maps/api/staticmap" ) != -1 ) {
-                        gmapDialog.open();
+                        dialogs.gmapDialog.open();
                     } else if ( img && img.getAttribute( "anchorname" ) ) {
-                        anchorDialog.open();
+                        dialogs.anchorDialog.open();
                     }else if(img && img.getAttribute("word_img")){
+                        //todo 放到dialog去做查询
                         editor.word_img = [img.getAttribute("word_img")];
-                        editor.ui._dialogs["wordImageDialog"].open();
+                        dialogs.wordimageDialog.open();
                     } else {
-                        imgDialog.open();
+                        dialogs.insertimageDialog.open();
                     }
 
                 },
@@ -439,7 +141,7 @@
                 },
                 _updateIframe: function() {
                     editor._iframe = popup.anchorEl;
-                    insertframe.open();
+                    editor.ui._dialogs.insertframeDialog.open();
                     popup.hide();
                 },
                 _onRemoveButtonClick: function () {
@@ -462,44 +164,7 @@
                 }
             } );
             popup.render();
-            //iframe
-            var insertframe = new baidu.editor.ui.Dialog( {
-                iframeUrl: iframeUrlMap?editor.ui.mapUrl( iframeUrlMap.insertframe ):"",
-                autoReset: true,
-                draggable: true,
-                editor: editor,
-                className: 'edui-for-insertframe',
-                title: '插入iframe',
-                buttons: [
-                    {
-                        className: 'edui-okbutton',
-                        label: '确认',
-                        onclick: function () {
-                            insertframe.close( true );
-                        }
-                    },
-                    {
-                        className: 'edui-cancelbutton',
-                        label: '取消',
-                        onclick: function () {
-                            insertframe.close( false );
-                        }
-                    }
-                ],
-                onok: function () {
-                },
-                oncancel: function () {
-                },
-                onclose: function ( t, ok ) {
-                    if ( ok ) {
-                        return this.onok();
-                    } else {
-                        return this.oncancel();
-                    }
-                }
 
-            } );
-            insertframe.render();
             editor.addListener( 'mouseover', function( t, evt ) {
                 evt = evt || window.event;
                 var el = evt.target || evt.srcElement;
@@ -526,7 +191,7 @@
                         //锚点处理
                         html += popup.formatHtml(
                             '<nobr>属性: <span onclick=$$._onImgEditButtonClick(event) class="edui-clickable">修改</span>&nbsp;&nbsp;<span onclick=$$._onRemoveButtonClick(event) class="edui-clickable">删除</span></nobr>' );
-                    } else if ( editor.options.imagePopup ) {
+                    } else if ( editor.options.imagePopup  ) {
                         html += popup.formatHtml(
                             '<nobr>属性: <span onclick=$$._onImgSetFloat("none") class="edui-clickable">默认</span>&nbsp;&nbsp;<span onclick=$$._onImgSetFloat("left") class="edui-clickable">居左</span>&nbsp;&nbsp;<span onclick=$$._onImgSetFloat("right") class="edui-clickable">居右</span>&nbsp;&nbsp;' +
                                 '<span onclick=$$._onImgSetFloat("center") class="edui-clickable">居中</span>' +
@@ -572,7 +237,7 @@
                 var toolbar = toolbars[i];
                 var toolbarUi = new baidu.editor.ui.Toolbar();
                 for ( var j = 0; j < toolbar.length; j++ ) {
-                    var toolbarItem = toolbar[j];
+                    var toolbarItem = toolbar[j].toLowerCase();
                     var toolbarItemUi = null;
                     if ( typeof toolbarItem == 'string' ) {
                         if ( toolbarItem == '|' ) {
@@ -588,7 +253,7 @@
                             if ( toolbarUis && toolbarUis[0] ) {
                                 toolbarUis[0].items.splice( 0, 0, toolbarItemUi );
                             } else {
-                                toolbarUi.items.splice( 0, 0, toolbarItemUi );
+                                toolbarItemUi && toolbarUi.items.splice( 0, 0, toolbarItemUi );
                             }
 
                             continue;
@@ -609,9 +274,10 @@
         getHtmlTpl: function () {
             return '<div id="##" class="%%">' +
                 '<div id="##_toolbarbox" class="%%-toolbarbox">' +
+                (this.toolbars.length  ?
                 '<div id="##_toolbarboxouter" class="%%-toolbarboxouter"><div class="%%-toolbarboxinner">' +
                 this.renderToolbarBoxHtml() +
-                '</div></div>' +
+                '</div></div>':'') +
                 '<div id="##_toolbarmsg" class="%%-toolbarmsg" style="display:none;">' +
                 '<div id = "##_upload_dialog" class="%%-toolbarmsg-upload" onclick="$$.showWordImageDialog();">点此上传</div>' +
                 '<div class="%%-toolbarmsg-close" onclick="$$.hideToolbarMsg();">x</div>' +
@@ -629,7 +295,7 @@
         },
         showWordImageDialog:function() {
             this.editor.execCommand( "wordimage", "word_img" );
-            this._dialogs['wordImageDialog'].open();
+            this._dialogs['wordimageDialog'].open();
         },
         renderToolbarBoxHtml: function () {
             var buff = [];
@@ -648,6 +314,8 @@
                 if ( baidu.editor.browser.gecko ) {
                     var bk = editor.selection.getRange().createBookmark();
                 }
+
+
 
                 if ( fullscreen ) {
 
@@ -669,7 +337,6 @@
                     this._updateFullScreen();
 
                 } else {
-
 
                     this.getDom().style.cssText = this._bakCssText;
                     this.getDom( 'iframeholder' ).style.cssText = this._bakCssText1;
@@ -801,7 +468,7 @@
             this.getDom( 'toolbarmsg' ).style.display = 'none';
         },
         mapUrl: function ( url ) {
-            return url.replace( '~/', this.editor.options.UEDITOR_HOME_URL || '' );
+            return url ? url.replace( '~/', this.editor.options.UEDITOR_HOME_URL || '' ) : ''
         },
         triggerLayout: function () {
             var dom = this.getDom();
@@ -818,39 +485,46 @@
 
         var editor = new baidu.editor.Editor( options );
         editor.options.editor = editor;
-        new EditorUI( editor.options );
+
 
 
         var oldRender = editor.render;
         editor.render = function ( holder ) {
+            utils.domReady(function(){
+                new EditorUI( editor.options );
+                if ( holder ) {
+                    if ( holder.constructor === String ) {
+                        holder = document.getElementById( holder );
+                    }
+                    holder && holder.getAttribute( 'name' ) && ( editor.options.textarea = holder.getAttribute( 'name' ));
+                    if ( holder && /script|textarea/ig.test( holder.tagName ) ) {
+                        var newDiv = document.createElement( 'div' );
+                        holder.parentNode.insertBefore( newDiv, holder );
+                        var cont = holder.value || holder.innerHTML;
+                        editor.options.initialContent = /^[\t\r\n ]*$/.test(cont) ? editor.options.initialContent :
+                            cont.replace(/>[\n\r\t]+([ ]{4})+/g,'>')
+                                .replace(/[\n\r\t]+([ ]{4})+</g,'<')
+                                .replace(/>[\n\r\t]+</g,'><');
 
-            if ( holder ) {
-                if ( holder.constructor === String ) {
-                    holder = document.getElementById( holder );
+                        holder.id && (newDiv.id = holder.id);
+
+                        holder.className && (newDiv.className = holder.className);
+                        holder.style.cssText && (newDiv.style.cssText = holder.style.cssText);
+                        holder.parentNode.removeChild( holder );
+                        holder = newDiv;
+                        holder.innerHTML = '';
+                    }
+
                 }
-                holder && holder.getAttribute( 'name' ) && ( editor.options.textarea = holder.getAttribute( 'name' ));
-                if ( holder && /script|textarea/ig.test( holder.tagName ) ) {
-                    var newDiv = document.createElement( 'div' );
-                    holder.parentNode.insertBefore( newDiv, holder );
-                    editor.options.initialContent = holder.value || holder.innerHTML;
 
-                    holder.id && (newDiv.id = holder.id);
+                editor.ui.render( holder );
+                var iframeholder = editor.ui.getDom( 'iframeholder' );
+                //给实例添加一个编辑器的容器引用
+                editor.container = editor.ui.getDom();
+                editor.container.style.zIndex = editor.options.zIndex;
+                oldRender.call( editor, iframeholder );
 
-                    holder.className && (newDiv.className = holder.className);
-                    holder.style.cssText && (newDiv.style.cssText = holder.style.cssText);
-                    holder.parentNode.removeChild( holder );
-                    holder = newDiv;
-                    holder.innerHTML = '';
-                }
-
-            }
-
-            editor.ui.render( holder );
-            var iframeholder = editor.ui.getDom( 'iframeholder' );
-            //给实例添加一个编辑器的容器引用
-            editor.container = editor.ui.getDom();
-            editor.container.style.zIndex = editor.options.zIndex;
-            oldRender.call( editor, iframeholder );
+            })
         };
         return editor;
     };

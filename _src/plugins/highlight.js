@@ -6,6 +6,7 @@
 ///commandsDialog  dialogs\code\code.html
 UE.plugins['highlight'] = function() {
     var me = this;
+    if(!/highlightcode/i.test(me.options.toolbars.join('')))return;
     me.commands['highlightcode'] = {
         execCommand: function (cmdName, code, syntax) {
             if(code && syntax){
@@ -17,7 +18,7 @@ UE.plugins['highlight'] = function() {
                 if(me.queryCommandState("highlightcode")){
                     me.execCommand("highlightcode");
                 }
-                me.execCommand('inserthtml', SyntaxHighlighter.highlight(pre,null,true));
+                me.execCommand('inserthtml', SyntaxHighlighter.highlight(pre,null,true),true);
                 var div = me.document.getElementById(SyntaxHighlighter.getHighlighterDivId());
                 div.setAttribute('highlighter',pre.className);
                 domUtils.remove(pre);
@@ -67,7 +68,7 @@ UE.plugins['highlight'] = function() {
         if(typeof XRegExp == "undefined"){
             var obj = {
                 id : "syntaxhighlighter_js",
-                src : me.options.highlightJsUrl,
+                src : me.options.highlightJsUrl || me.options.UEDITOR_HOME_URL + "third-party/SyntaxHighlighter/shCore.js",
                 tag : "script",
                 type : "text/javascript",
                 defer : "defer"
@@ -82,7 +83,7 @@ UE.plugins['highlight'] = function() {
                 tag : "link",
                 rel : "stylesheet",
                 type : "text/css",
-                href : me.options.highlightCssUrl
+                href : me.options.highlightCssUrl ||me.options.UEDITOR_HOME_URL + "third-party/SyntaxHighlighter/shCoreDefault.css"
             };
             utils.loadFile(me.document,obj);
         }
@@ -114,17 +115,22 @@ UE.plugins['highlight'] = function() {
         changePre();
     });
     function adjustHeight(){
-        var div = me.document.getElementById(SyntaxHighlighter.getHighlighterDivId());
+        setTimeout(function(){
+            var div = me.document.getElementById(SyntaxHighlighter.getHighlighterDivId());
 
-        if(div){
-            var tds = div.getElementsByTagName('td');
-            for(var i=0,li,ri;li=tds[0].childNodes[i];i++){
-                ri = tds[1].firstChild.childNodes[i];
+            if(div){
+                var tds = div.getElementsByTagName('td');
+                for(var i=0,li,ri;li=tds[0].childNodes[i];i++){
+                    ri = tds[1].firstChild.childNodes[i];
+                    //trace:1949
+                    if(ri){
+                        ri.style.height = li.style.height = ri.offsetHeight + 'px';
+                    }
+                }
 
-                ri.style.height = li.style.height = ri.offsetHeight + 'px';
             }
+        });
 
-        }
     }
     function changePre(){
         for(var i=0,pr,pres = domUtils.getElementsByTagName(me.document,"pre");pr=pres[i++];){

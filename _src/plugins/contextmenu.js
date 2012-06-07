@@ -11,8 +11,153 @@
 UE.plugins['contextmenu'] = function () {
     var me = this,
         menu,
-        items = me.options.contextMenu;
-    if(!items || items.length==0) return;
+        items = me.options.contextMenu||[
+            {label:'删除',cmdName:'delete'},
+            {label:'全选',cmdName:'selectall'},
+            {
+                label:'删除代码',
+                cmdName:'highlightcode',
+                icon:'deletehighlightcode'
+
+            },
+            {
+                label:'清空文档',
+                cmdName:'cleardoc',
+                exec:function () {
+
+                    if ( confirm( '确定清空文档吗？' ) ) {
+
+                        this.execCommand( 'cleardoc' );
+                    }
+                }
+            },
+            '-',
+            {
+                label:'取消链接',
+                cmdName:'unlink'
+            },
+            '-',
+            {
+                group:'段落格式',
+                icon:'justifyjustify',
+
+                subMenu:[
+                    {
+                        label:'居左对齐',
+                        cmdName:'justify',
+                        value:'left'
+                    },
+                    {
+                        label:'居右对齐',
+                        cmdName:'justify',
+                        value:'right'
+                    },
+                    {
+                        label:'居中对齐',
+                        cmdName:'justify',
+                        value:'center'
+                    },
+                    {
+                        label:'两端对齐',
+                        cmdName:'justify',
+                        value:'justify'
+                    }
+                ]
+            },
+            '-',
+            {
+                label:'表格属性',
+                cmdName:'edittable',
+                exec:function () {
+                    this.ui._dialogs['inserttableDialog'].open();
+                }
+            },
+            {
+                label:'单元格属性',
+                cmdName:'edittd',
+                exec:function () {
+                    //如果没有创建，创建一下先
+                    if(UE.ui['edittd']){
+                        new UE.ui['edittd'](this);
+                    }
+                    this.ui._dialogs['edittdDialog'].open();
+                }
+            },
+            {
+                group:'表格',
+                icon:'table',
+
+                subMenu:[
+                    {
+                        label:'删除表格',
+                        cmdName:'deletetable'
+                    },
+                    {
+                        label:'表格前插行',
+                        cmdName:'insertparagraphbeforetable'
+                    },
+                    '-',
+                    {
+                        label:'删除行',
+                        cmdName:'deleterow'
+                    },
+                    {
+                        label:'删除列',
+                        cmdName:'deletecol'
+                    },
+                    '-',
+                    {
+                        label:'前插入行',
+                        cmdName:'insertrow'
+                    },
+                    {
+                        label:'前插入列',
+                        cmdName:'insertcol'
+                    },
+                    '-',
+                    {
+                        label:'右合并单元格',
+                        cmdName:'mergeright'
+                    },
+                    {
+                        label:'下合并单元格',
+                        cmdName:'mergedown'
+                    },
+                    '-',
+                    {
+                        label:'拆分成行',
+                        cmdName:'splittorows'
+                    },
+                    {
+                        label:'拆分成列',
+                        cmdName:'splittocols'
+                    },
+                    {
+                        label:'合并多个单元格',
+                        cmdName:'mergecells'
+                    },
+                    {
+                        label:'完全拆分单元格',
+                        cmdName:'splittocells'
+                    }
+                ]
+            },
+            {
+                label:'复制(ctrl+c)',
+                cmdName:'copy',
+                exec:function () {
+                    alert( "请使用ctrl+c进行复制" );
+                }
+            },
+            {
+                label:'粘贴(ctrl+v)',
+                cmdName:'paste',
+                exec:function () {
+                    alert( "请使用ctrl+v进行粘贴" );
+                }
+            }
+        ];
+    if(!items.length)return;
     var uiUtils = UE.ui.uiUtils;
     me.addListener('contextmenu',function(type,evt){
         var offset = uiUtils.getViewportOffsetByEvent(evt);
@@ -34,7 +179,7 @@ UE.plugins['contextmenu'] = function () {
                                         subMenu.push('-');
 
                                 } else {
-                                    if (me.queryCommandState(subItem.cmdName) != -1) {
+                                    if (me.queryCommandState(subItem.cmdName) > -1) {
                                         subMenu.push({
                                             'label':subItem.label,
                                             className: 'edui-for-' + subItem.cmdName + (subItem.value || ''),
@@ -63,7 +208,7 @@ UE.plugins['contextmenu'] = function () {
                         }
 
                 } else {
-                    if (me.queryCommandState(item.cmdName) != -1) {
+                    if (me.queryCommandState(item.cmdName) > -1) {
                         //highlight todo
                         if(item.cmdName == 'highlightcode' && me.queryCommandState(item.cmdName) == 0)
                             return;

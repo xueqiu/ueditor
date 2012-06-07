@@ -7,9 +7,9 @@
  * @author zhanyi
     */
     UE.commands['inserthtml'] = {
-        execCommand: function (command,html){
+        execCommand: function (command,html,notSerialize){
             var me = this,
-                range,deletedElms, i,ci,
+                range,
                 div,
                 tds = me.currentSelectedArr;
 
@@ -17,6 +17,13 @@
 
             div = range.document.createElement( 'div' );
             div.style.display = 'inline';
+            var serialize = me.serialize;
+            if (!notSerialize && serialize) {
+                var node = serialize.parseHTML(html);
+                node = serialize.transformInput(node);
+                node = serialize.filter(node);
+                html = serialize.toHTML(node);
+            }
             div.innerHTML = utils.trim( html );
 
             try{
@@ -77,6 +84,15 @@
                         if(!pre.childNodes.length){
                             domUtils.remove(pre);
                         }
+                        //trace:2012,在非ie的情况，切开后剩下的节点有可能不能点入光标添加br占位
+
+                        if(!browser.ie &&
+                            (next = child.nextSibling) &&
+                            domUtils.isBlockElm(next) &&
+                            next.lastChild &&
+                            !domUtils.isBr(next.lastChild)){
+                            next.appendChild(me.document.createElement('br'))
+                        }
                         hadBreak = 1;
                     }
                 }
@@ -89,14 +105,10 @@
                 range.setEndAfter( child ).collapse();
 
             }
-//            if(!range.startContainer.childNodes[range.startOffset] && domUtils.isBlockElm(range.startContainer)){
-//                next = editor.document.createElement('br');
-//                range.insertNode(next);
-//                range.collapse(true);
-//            }
-            //block为空无法定位光标
+
 
             child = range.startContainer;
+
             //用chrome可能有空白展位符
             if(domUtils.isBlockElm(child) && domUtils.isEmptyNode(child)){
                 child.innerHTML = browser.ie ? '' : '<br/>'

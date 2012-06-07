@@ -3,7 +3,7 @@
 (function (){
     var utils = baidu.editor.utils,
         UIBase = baidu.editor.ui.UIBase;
-    
+
     var AutoTypeSetPicker = baidu.editor.ui.AutoTypeSetPicker = function (options){
         this.initOptions(options);
         this.initAutoTypeSetPicker();
@@ -13,11 +13,7 @@
             this.initUIBase();
         },
         getHtmlTpl: function (){
-            var options = this.editor.options,
-                opt = options.autotypeset;
-            for(var i = 0,lineStr = [],li,lis = options.listMap.lineheight;li=lis[i++];){
-                lineStr.push('<option value="'+li+'" '+(opt["lineHeight"] == li ? 'checked' : '')+'>'+li+'</option>');
-            }
+            var opt = this.editor.options.autotypeset;
 
             return '<div id="##" class="edui-autotypesetpicker %%">' +
                  '<div class="edui-autotypesetpicker-body">' +
@@ -25,10 +21,6 @@
                         '<tr><td colspan="2"><input type="checkbox" name="mergeEmptyline" '+ (opt["mergeEmptyline"] ? "checked" : "" )+'>合并空行</td><td colspan="2"><input type="checkbox" name="removeEmptyline" '+ (opt["removeEmptyline"] ? "checked" : "" )+'>删除空行</td></tr>'+
                         '<tr><td colspan="2"><input type="checkbox" name="removeClass" '+ (opt["removeClass"] ? "checked" : "" )+'>清除样式</td><td colspan="2"><input type="checkbox" name="indent" '+ (opt["indent"] ? "checked" : "" )+'>首行缩进2字</td></tr>'+
                         '<tr><td colspan="2"><input type="checkbox" name="textAlign" '+ (opt["textAlign"] ? "checked" : "" )+'>对齐方式：</td><td colspan="2" id="textAlignValue"><input type="radio" name="textAlignValue" value="left" '+((opt["textAlign"]&&opt["textAlign"]=="left") ? "checked" : "")+'>左对齐<input type="radio" name="textAlignValue" value="center" '+((opt["textAlign"]&&opt["textAlign"]=="center") ? "checked" : "")+'>居中对齐<input type="radio" name="textAlignValue" value="right" '+((opt["textAlign"]&&opt["textAlign"]=="right") ? "checked" : "")+'>右对齐 </tr>'+
-
-
-
-
                         '<tr><td colspan="2"><input type="checkbox" name="imageBlockLine" '+ (opt["imageBlockLine"] ? "checked" : "" )+'>图片浮动</td>' +
                             '<td colspan="2" id="imageBlockLineValue">' +
                                 '<input type="radio" name="imageBlockLineValue" value="none" '+((opt["imageBlockLine"]&&opt["imageBlockLine"]=="none") ? "checked" : "")+'>默认' +

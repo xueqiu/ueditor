@@ -13,12 +13,13 @@ UE.plugins['elementpath'] = function(){
     var currentLevel,
         tagNames,
         me = this;
+    me.setOpt('elementPathEnabled',true);
+    if(!me.options.elementPathEnabled)return;
     me.commands['elementpath'] = {
         execCommand : function( cmdName, level ) {
             var start = tagNames[level],
                 range = me.selection.getRange();
             me.currentSelectedArr && domUtils.clearSelectedArr(me.currentSelectedArr);
-           
             currentLevel = level*1;
             if(dtd.$tableContent[start.tagName]){
                 switch (start.tagName){
