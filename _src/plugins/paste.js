@@ -144,6 +144,9 @@
 
 
                     html = div.innerHTML;
+                    if (SNB && SNB.Util && 'function' == typeof SNB.Util.parseContent) {
+                      html = SNB.Util.parseContent(html, true)
+                    }
 
                     var f = me.serialize;
                     if(f){
