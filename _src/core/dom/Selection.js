@@ -68,7 +68,7 @@
 
         testRange.collapse( position > 0 );
         testRange.setEndPoint( position > 0 ? 'StartToStart' : 'EndToStart', range );
-        distance = testRange.text.replace( /(\r\n|\r)/g, '\n' ).length;
+        distance = testRange.text.replace( /(\r\n|\r)/g, ie && browser.version == 9 ? '' : '\n' ).length;
         if ( !distance ) {
             return  dtd.$empty[child.tagName] || dtd.$nonChild[child.tagName]?
 
