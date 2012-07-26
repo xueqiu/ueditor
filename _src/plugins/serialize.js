@@ -1012,7 +1012,7 @@ UE.plugins['serialize'] = function () {
                 }
                 if ( whiteList ) {
                     if ( node.type == 'element' ) {
-                        if ( parent.type == 'fragment' ? whiteList[node.name] : whiteList[node.name] && whiteList[parent.name][node.name] ) {
+                        if ( node.name == 'img' || parent.type == 'fragment' ? whiteList[node.name] : whiteList[node.name] && whiteList[parent.name][node.name] ) {
 
                             var props;
                             if ( (props = whiteList[node.name].$) ) {
@@ -1028,6 +1028,16 @@ UE.plugins['serialize'] = function () {
 
 
                         } else {
+                            //用户名的 a 标签确保加 @
+                            if ( node.tag == 'a'
+                              && node.attributes['data-name']
+                              && node.children
+                              && node.children.length == 1
+                              && node.children[0].type == 'text'
+                              && node.children[0].data[0] != '@'
+                            ) {
+                              node.children[0].data = '@' + node.children[0].data
+                            }
                             modify && (modify.flag = 1);
                             node.type = 'fragment';
                             // NOTE: 这里算是一个hack
