@@ -17,7 +17,7 @@ UE.plugins['autoheight'] = function () {
         lastHeight = 0,
         currentHeight,
         timer;
-    function adjustHeight() {
+    var adjustHeight = me.adjustHeight = function () {
         clearTimeout(timer);
         timer = setTimeout(function () {
             if (me.queryCommandState('source') != 1) {
