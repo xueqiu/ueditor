@@ -190,13 +190,22 @@
            return str ? str.replace(/[&<">]/g, function(m){
                return {
                    '<': '&lt;',
-                   '&': '&amp',
+                   '&': '&amp;',
                    '"': '&quot;',
                    '>': '&gt;'
                }[m]
            }) : '';
 		},
-
+        html:  function(str) {
+            return str ? str.replace(/&((g|l|quo)t|amp);/g, function(m){
+                return {
+                    '&lt;':'<',
+                    '&amp;':'&',
+                    '&quot;':'"',
+                    '&gt;': '>'
+                }[m]
+            }) : '';
+        },
 		/**
          * 将css样式转换为驼峰的形式。如font-size -> fontSize
          * @public
@@ -342,6 +351,9 @@
                 }
             }
             return function(onready){
+                if ( document.readyState === "complete" ) {
+                    return setTimeout( onready, 1 );
+                }
                 onready && fnArr.push(onready);
 
                 isReady && doReady();
@@ -364,7 +376,7 @@
                         document.removeEventListener( "DOMContentLoaded", arguments.callee, false );
                         doReady();
                     }, false );
-
+                    window.addEventListener('load',doReady,false);
                 }
             }
 

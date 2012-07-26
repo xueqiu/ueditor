@@ -161,7 +161,6 @@ UE.plugins['serialize'] = function () {
                             }
                         }
                         if ( forceDtd ) {
-
                             // 如果遇到这个标签不能放在前一个标签内部，则结束前一个标签,span单独处理
                             while ( dtd[node.tag] && !(currentNode.tag == 'span' ? utils.extend( dtd['strong'], {'a':1,'A':1} ) : (dtd[currentNode.tag] || dtd['div']))[node.tag] ) {
                                 if ( tagEnd( currentNode ) ) continue;
@@ -538,6 +537,9 @@ UE.plugins['serialize'] = function () {
 //                            if ( !/mso\-list/.test( name ) )
                                 continue;
                         }
+                        if(/text\-indent|padding|margin/.test(name) && /\-[\d.]+/.test(value)){
+                            continue;
+                        }
                         n[i] = name + ":" + parts[1];        // Lower-case name, but keep value case
                     }
                 }
@@ -611,7 +613,7 @@ UE.plugins['serialize'] = function () {
             case 'script':
                 node.tag = 'div';
                 node.attributes._ue_div_script = 1;
-                node.attributes._ue_script_data = node.children[0] ? node.children[0].data  : '';
+                node.attributes._ue_script_data = node.children[0] ? encodeURIComponent(node.children[0].data)  : '';
                 node.children = [];
                 break;
             case 'img':
@@ -782,12 +784,6 @@ UE.plugins['serialize'] = function () {
 //                }
                 var style = node.attributes.style;
                 if ( style ) {
-                    //trace:1493
-                    //ff3.6出来的是background: none repeat scroll %0 %0 颜色
-                    style = style.match( /(?:\b(?:color|font-size|background(-color)?|font-family|text-decoration)\b\s*:\s*(&[^;]+;|[^;])+(?=;)?)/gi );
-                    if ( style ) {
-                        node.attributes.style = style.join( ';' );
-                    }
                     if ( !node.attributes.style  || browser.webkit && style == "white-space:nowrap;") {
                         delete node.attributes.style;
                     }
@@ -894,7 +890,7 @@ UE.plugins['serialize'] = function () {
             case 'div' :
                 if(node.attributes._ue_div_script){
                     node.tag = 'script';
-                    node.children = [{type:'cdata',data:node.attributes._ue_script_data||'',parent:node}];
+                    node.children = [{type:'cdata',data:decodeURIComponent(node.attributes._ue_script_data)||'',parent:node}];
                     delete node.attributes._ue_div_script;
                     delete node.attributes._ue_script_data;
                     break;
@@ -904,6 +900,9 @@ UE.plugins['serialize'] = function () {
                 if ( ie && node.attributes.style ) {
 
                     optStyle( node );
+                }
+                if(node.attributes['class'] == 'noBorderTable'){
+                    delete node.attributes['class'];
                 }
                 break;
             case 'td':

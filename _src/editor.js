@@ -33,6 +33,6 @@ UE.commands = {};
 //}();
 
 
-UE.version = "1.2.1.0";
+UE.version = "1.2.2.0";
 
 var dom = UE.dom = {};

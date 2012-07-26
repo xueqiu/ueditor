@@ -169,46 +169,48 @@
                         iframeUrl = iframeUrl || (editor.options.iframeUrlMap||{})[cmd] || iframeUrlMap[cmd];
                         title = title ||editor.options.labelMap[cmd.toLowerCase()] || '';
                         //没有iframeUrl不创建dialog
-                        if(!iframeUrl){
-                            return;
-                        }
-                        var dialog = new editorui.Dialog( utils.extend({
-                            iframeUrl: editor.ui.mapUrl(iframeUrl),
-                            editor: editor,
-                            className: 'edui-for-' + cmd,
-                            title: title
-                        },type == 'ok'?{
-                            buttons: [{
-                                className: 'edui-okbutton',
-                                label: '确认',
-                                onclick: function (){
-                                    dialog.close(true);
-                                }
-                            }, {
-                                className: 'edui-cancelbutton',
-                                label: '取消',
-                                onclick: function (){
-                                    dialog.close(false);
-                                }
-                            }]
-                        }:{}));
+                        var dialog
+                        if(iframeUrl){
+                            dialog = new editorui.Dialog( utils.extend({
+                                    iframeUrl: editor.ui.mapUrl(iframeUrl),
+                                    editor: editor,
+                                    className: 'edui-for-' + cmd,
+                                    title: title
+                                },type == 'ok'?{
+                                    buttons: [{
+                                        className: 'edui-okbutton',
+                                        label: '确认',
+                                        onclick: function (){
+                                            dialog.close(true);
+                                        }
+                                    }, {
+                                        className: 'edui-cancelbutton',
+                                        label: '取消',
+                                        onclick: function (){
+                                            dialog.close(false);
+                                        }
+                                    }]
+                                }:{}));
 
-                        editor.ui._dialogs[cmd+"Dialog"] = dialog;
+                            editor.ui._dialogs[cmd+"Dialog"] = dialog;
+                        }
+
                         var ui = new editorui.Button({
                             className: 'edui-for-' + cmd,
                             title: title,
                             onclick: function (){
-                                if(cmd=="wordimage"){//wordimage需要先判断是否存在word_img属性再确定是否打开
-                                    editor.execCommand("wordimage","word_img");
-                                    if(editor.word_img){
+                                if(dialog){
+                                    if(cmd=="wordimage"){//wordimage需要先判断是否存在word_img属性再确定是否打开
+                                        editor.execCommand("wordimage","word_img");
+                                        if(editor.word_img){
+                                            dialog.render();
+                                            dialog.open();
+                                        }
+                                    }else{
                                         dialog.render();
                                         dialog.open();
                                     }
-                                }else{
-                                    dialog.render();
-                                    dialog.open();
                                 }
-
                             }
                         });
                         editor.addListener('selectionchange', function (){
@@ -239,29 +241,31 @@
 
             if(browser.ie){
                 iframeUrl = iframeUrl || (editor.options.iframeUrlMap||{})["snapscreen"] || iframeUrlMap["snapscreen"];
-                if(!iframeUrl)return;
-                var dialog = new editorui.Dialog({
-                    iframeUrl: editor.ui.mapUrl(iframeUrl),
-                    editor: editor,
-                    className: 'edui-for-snapscreen',
-                    title: title,
-                    buttons: [{
-                        className: 'edui-okbutton',
-                        label: '确认',
-                        onclick: function (){
-                            dialog.close(true);
-                        }
-                    }, {
-                        className: 'edui-cancelbutton',
-                        label: '取消',
-                        onclick: function (){
-                            dialog.close(false);
-                        }
-                    }]
+                if(iframeUrl){
+                    var dialog = new editorui.Dialog({
+                        iframeUrl: editor.ui.mapUrl(iframeUrl),
+                        editor: editor,
+                        className: 'edui-for-snapscreen',
+                        title: title,
+                        buttons: [{
+                            className: 'edui-okbutton',
+                            label: '确认',
+                            onclick: function (){
+                                dialog.close(true);
+                            }
+                        }, {
+                            className: 'edui-cancelbutton',
+                            label: '取消',
+                            onclick: function (){
+                                dialog.close(false);
+                            }
+                        }]
 
-                });
-                dialog.render();
-                editor.ui._dialogs["snapscreenDialog"] = dialog;
+                    });
+                    dialog.render();
+                    editor.ui._dialogs["snapscreenDialog"] = dialog;
+                }
+
             }
             editor.addListener('selectionchange',function(){
                 ui.setDisabled( editor.queryCommandState('snapscreen') == -1);
@@ -488,43 +492,43 @@
     editorui.inserttable = function (editor, iframeUrl, title){
         iframeUrl = iframeUrl || (editor.options.iframeUrlMap||{})['inserttable'] || iframeUrlMap['inserttable'];
         title = title || editor.options.labelMap['inserttable'] || '';
-        if(!iframeUrl){
-            return
-        }
-        var dialog = new editorui.Dialog({
-            iframeUrl: editor.ui.mapUrl(iframeUrl),
-            editor: editor,
-            className: 'edui-for-inserttable',
-            title: title,
-            buttons: [{
-                className: 'edui-okbutton',
-                label: '确认',
-                onclick: function (){
-                    dialog.close(true);
-                }
-            }, {
-                className: 'edui-cancelbutton',
-                label: '取消',
-                onclick: function (){
-                    dialog.close(false);
-                }
-            }]
+        if(iframeUrl){
+            var dialog = new editorui.Dialog({
+                iframeUrl: editor.ui.mapUrl(iframeUrl),
+                editor: editor,
+                className: 'edui-for-inserttable',
+                title: title,
+                buttons: [{
+                    className: 'edui-okbutton',
+                    label: '确认',
+                    onclick: function (){
+                        dialog.close(true);
+                    }
+                }, {
+                    className: 'edui-cancelbutton',
+                    label: '取消',
+                    onclick: function (){
+                        dialog.close(false);
+                    }
+                }]
 
-        });
-        dialog.render();
-        editor.ui._dialogs['inserttableDialog'] = dialog;
+            });
+            dialog.render();
+            editor.ui._dialogs['inserttableDialog'] = dialog;
+        }
+
         var ui = new editorui.TableButton({
             editor:editor,
             title: title,
             className: 'edui-for-inserttable',
             onpicktable: function (t,numCols, numRows){
-                editor.execCommand('InsertTable', {numRows:numRows, numCols:numCols});
+                editor.execCommand('InsertTable', {numRows:numRows, numCols:numCols,border:1});
             },
             onmore: function (){
-                dialog.open();
+                dialog && dialog.open();
             },
             onbuttonclick: function (){
-                dialog.open();
+                dialog && dialog.open();
             }
         });
         editor.addListener('selectionchange', function (){

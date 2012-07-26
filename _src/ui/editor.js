@@ -5,7 +5,8 @@
 (function () {
     var utils = baidu.editor.utils,
         uiUtils = baidu.editor.ui.uiUtils,
-        UIBase = baidu.editor.ui.UIBase;
+        UIBase = baidu.editor.ui.UIBase,
+        domUtils = baidu.editor.dom.domUtils;
 
     function EditorUI( options ) {
         this.initOptions( options );
@@ -23,7 +24,7 @@
                 me = this;
 
             editor.addListener( 'ready', function () {
-                baidu.editor.dom.domUtils.on( editor.window, 'scroll', function () {
+                domUtils.on( editor.window, 'scroll', function () {
                     baidu.editor.ui.Popup.postHide();
                 } );
 
@@ -77,45 +78,15 @@
                     this.hide();
                     editor.ui._dialogs.linkDialog.open();
                 },
-                _onImgEditButtonClick: function () {
+                _onImgEditButtonClick: function (name) {
                     this.hide();
-                    var nodeStart = editor.selection.getRange().getClosedNode(),
-                        dialogs = editor.ui._dialogs;
-                    var img = baidu.editor.dom.domUtils.findParentByTagName( nodeStart, "img", true );
-                    if ( img && img.className.indexOf( "edui-faked-video" ) != -1 ) {
-                        dialogs.insertvideoDialog.open();
-                    }else if(img && img.className.indexOf( "edui-faked-webapp" ) != -1){
-                        dialogs.webappDialog.open();
-                    }else if ( img && img.src.indexOf( "http://api.map.baidu.com" ) != -1 ) {
-                        dialogs.mapDialog.open();
-                    } else if ( img && img.src.indexOf( "http://maps.google.com/maps/api/staticmap" ) != -1 ) {
-                        dialogs.gmapDialog.open();
-                    } else if ( img && img.getAttribute( "anchorname" ) ) {
-                        dialogs.anchorDialog.open();
-                    }else if(img && img.getAttribute("word_img")){
-                        //todo 放到dialog去做查询
-                        editor.word_img = [img.getAttribute("word_img")];
-                        dialogs.wordimageDialog.open();
-                    } else {
-                        dialogs.insertimageDialog.open();
-                    }
+                    editor.ui._dialogs[name]  && editor.ui._dialogs[name].open();
 
                 },
-                _getImg: function () {
-                    var img = editor.selection.getRange().getClosedNode();
-                    if ( img && (img.nodeName == 'img' || img.nodeName == 'IMG') ) {
-                        return img;
-                    }
-                    return null;
-                },
                 _onImgSetFloat: function( value ) {
-                    if ( this._getImg() ) {
-                        editor.execCommand( "imagefloat", value );
-                        var img = this._getImg();
-                        if ( img ) {
-                            this.showAnchor( img );
-                        }
-                    }
+                    this.hide();
+                    editor.execCommand( "imagefloat", value );
+
                 },
                 _setIframeAlign: function( value ) {
                     var frame = popup.anchorEl;
@@ -135,7 +106,7 @@
                             break;
                     }
                     frame.parentNode.insertBefore( newFrame, frame );
-                    baidu.editor.dom.domUtils.remove( frame );
+                    domUtils.remove( frame );
                     popup.anchorEl = newFrame;
                     popup.showAnchor( popup.anchorEl );
                 },
@@ -144,19 +115,13 @@
                     editor.ui._dialogs.insertframeDialog.open();
                     popup.hide();
                 },
-                _onRemoveButtonClick: function () {
-                    var nodeStart = editor.selection.getRange().getClosedNode();
-                    var img = baidu.editor.dom.domUtils.findParentByTagName( nodeStart, "img", true );
-                    if ( img && img.getAttribute( "anchorname" ) ) {
-                        editor.execCommand( "anchor" );
-                    } else {
-                        editor.execCommand( 'unlink' );
-                    }
+                _onRemoveButtonClick: function (cmdName) {
+                    editor.execCommand( cmdName );
                     this.hide();
                 },
                 queryAutoHide: function ( el ) {
                     if ( el && el.ownerDocument == editor.document ) {
-                        if ( el.tagName.toLowerCase() == 'img' || baidu.editor.dom.domUtils.findParentByTagName( el, 'a', true ) ) {
+                        if ( el.tagName.toLowerCase() == 'img' || domUtils.findParentByTagName( el, 'a', true ) ) {
                             return el !== popup.anchorEl;
                         }
                     }
@@ -164,70 +129,94 @@
                 }
             } );
             popup.render();
+            if(editor.options.imagePopup){
+                editor.addListener( 'mouseover', function( t, evt ) {
+                    evt = evt || window.event;
+                    var el = evt.target || evt.srcElement;
+                    if (  editor.ui._dialogs.insertframeDialog && /iframe/ig.test( el.tagName )  ) {
+                        var html = popup.formatHtml(
+                            '<nobr>属性: <span onclick=$$._setIframeAlign(-2) class="edui-clickable">默认</span>&nbsp;&nbsp;<span onclick=$$._setIframeAlign(-1) class="edui-clickable">左对齐</span>&nbsp;&nbsp;<span onclick=$$._setIframeAlign(1) class="edui-clickable">右对齐</span>&nbsp;&nbsp;' +
+                                '<span onclick=$$._setIframeAlign(2) class="edui-clickable">居中</span>' +
+                                ' <span onclick="$$._updateIframe( this);" class="edui-clickable">修改</span></nobr>' );
+                        if ( html ) {
+                            popup.getDom( 'content' ).innerHTML = html;
+                            popup.anchorEl = el;
+                            popup.showAnchor( popup.anchorEl );
+                        } else {
+                            popup.hide();
+                        }
+                    }
+                } );
+                editor.addListener( 'selectionchange', function ( t, causeByUi ) {
+                    if ( !causeByUi ) return;
+                    var html =  '',
+                        img = editor.selection.getRange().getClosedNode(),
+                        dialogs = editor.ui._dialogs;
+                    if ( img && img.tagName == 'IMG' ) {
+                        var dialogName = 'insertimageDialog';
+                        if ( img.className.indexOf( "edui-faked-video" ) != -1 ) {
+                            dialogName = "insertvideoDialog"
+                        }
+                        if(img.className.indexOf( "edui-faked-webapp" ) != -1){
+                            dialogName = "webappDialog"
+                        }
+                        if ( img.src.indexOf( "http://api.map.baidu.com" ) != -1 ) {
+                            dialogName = "mapDialog"
+                        }
+                        if ( img.src.indexOf( "http://maps.google.com/maps/api/staticmap" ) != -1 ) {
+                            dialogName = "gmapDialog"
+                        }
+                        if ( img.getAttribute( "anchorname" ) ) {
+                            dialogName = "anchorDialog";
+                            html = popup.formatHtml(
+                                '<nobr>属性: <span onclick=$$._onImgEditButtonClick("anchorDialog") class="edui-clickable">修改</span>&nbsp;&nbsp;' +
+                                '<span onclick=$$._onRemoveButtonClick(\'anchor\') class="edui-clickable">删除</span></nobr>' );
+                        }
+                        if( img.getAttribute("word_img")){
+                            //todo 放到dialog去做查询
+                            editor.word_img = [img.getAttribute("word_img")];
+                            dialogName = "wordimageDialog"
+                        }
+                        if(!dialogs[dialogName]){
+                            return;
+                        }
+                        !html && (html = popup.formatHtml(
+                            '<nobr>属性: <span onclick=$$._onImgSetFloat("none") class="edui-clickable">默认</span>&nbsp;&nbsp;' +
+                                '<span onclick=$$._onImgSetFloat("left") class="edui-clickable">居左</span>&nbsp;&nbsp;' +
+                                '<span onclick=$$._onImgSetFloat("right") class="edui-clickable">居右</span>&nbsp;&nbsp;' +
+                                '<span onclick=$$._onImgSetFloat("center") class="edui-clickable">居中</span>&nbsp;&nbsp;' +
+                                '<span onclick="$$._onImgEditButtonClick(\''+dialogName+'\');" class="edui-clickable">修改</span></nobr>' ))
 
-            editor.addListener( 'mouseover', function( t, evt ) {
-                evt = evt || window.event;
-                var el = evt.target || evt.srcElement;
-                if ( /iframe/ig.test( el.tagName ) && editor.options.imagePopup ) {
-                    var html = popup.formatHtml(
-                        '<nobr>属性: <span onclick=$$._setIframeAlign(-2) class="edui-clickable">默认</span>&nbsp;&nbsp;<span onclick=$$._setIframeAlign(-1) class="edui-clickable">左对齐</span>&nbsp;&nbsp;<span onclick=$$._setIframeAlign(1) class="edui-clickable">右对齐</span>&nbsp;&nbsp;' +
-                            '<span onclick=$$._setIframeAlign(2) class="edui-clickable">居中</span>' +
-                            ' <span onclick="$$._updateIframe( this);" class="edui-clickable">修改</span></nobr>' );
+                    }
+                    if(editor.ui._dialogs.linkDialog){
+                        var link = domUtils.findParentByTagName( editor.selection.getStart(), "a", true );
+                        var url;
+                        if ( link  && (url = (link.getAttribute( 'data_ue_src' ) || link.getAttribute( 'href', 2 )))  ) {
+                            var txt = url;
+                            if ( url.length > 30 ) {
+                                txt = url.substring( 0, 20 ) + "...";
+                            }
+                            if ( html ) {
+                                html += '<div style="height:5px;"></div>'
+                            }
+                            html += popup.formatHtml(
+                                '<nobr>链接: <a target="_blank" href="' + url + '" title="' + url + '" >' + txt + '</a>' +
+                                    ' <span class="edui-clickable" onclick="$$._onEditButtonClick();">修改</span>' +
+                                    ' <span class="edui-clickable" onclick="$$._onRemoveButtonClick(\'unlink\');"> 清除</span></nobr>' );
+                            popup.showAnchor( link );
+                        }
+                    }
+
                     if ( html ) {
                         popup.getDom( 'content' ).innerHTML = html;
-                        popup.anchorEl = el;
+                        popup.anchorEl = img || link;
                         popup.showAnchor( popup.anchorEl );
                     } else {
                         popup.hide();
                     }
-                }
-            } );
-            editor.addListener( 'selectionchange', function ( t, causeByUi ) {
-                if ( !causeByUi ) return;
-                var html = '';
-                var img = editor.selection.getRange().getClosedNode();
-                if ( img != null && img.tagName.toLowerCase() == 'img' ) {
-                    if ( img.getAttribute( 'anchorname' ) ) {
-                        //锚点处理
-                        html += popup.formatHtml(
-                            '<nobr>属性: <span onclick=$$._onImgEditButtonClick(event) class="edui-clickable">修改</span>&nbsp;&nbsp;<span onclick=$$._onRemoveButtonClick(event) class="edui-clickable">删除</span></nobr>' );
-                    } else if ( editor.options.imagePopup  ) {
-                        html += popup.formatHtml(
-                            '<nobr>属性: <span onclick=$$._onImgSetFloat("none") class="edui-clickable">默认</span>&nbsp;&nbsp;<span onclick=$$._onImgSetFloat("left") class="edui-clickable">居左</span>&nbsp;&nbsp;<span onclick=$$._onImgSetFloat("right") class="edui-clickable">居右</span>&nbsp;&nbsp;' +
-                                '<span onclick=$$._onImgSetFloat("center") class="edui-clickable">居中</span>' +
-                                ' <span onclick="$$._onImgEditButtonClick(event, this);" class="edui-clickable">修改</span></nobr>' );
-                    }
-                }
-                var link;
-                if ( editor.selection.getRange().collapsed ) {
-                    link = editor.queryCommandValue( "link" );
-                } else {
-                    link = editor.selection.getStart();
-                }
-                link = baidu.editor.dom.domUtils.findParentByTagName( link, "a", true );
-                var url;
-                if ( link != null && (url = (link.getAttribute( 'data_ue_src' ) || link.getAttribute( 'href', 2 ))) != null ) {
-                    var txt = url;
-                    if ( url.length > 30 ) {
-                        txt = url.substring( 0, 20 ) + "...";
-                    }
-                    if ( html ) {
-                        html += '<div style="height:5px;"></div>'
-                    }
-                    html += popup.formatHtml(
-                        '<nobr>链接: <a target="_blank" href="' + url + '" title="' + url + '" >' + txt + '</a>' +
-                            ' <span class="edui-clickable" onclick="$$._onEditButtonClick(event, this);">修改</span>' +
-                            ' <span class="edui-clickable" onclick="$$._onRemoveButtonClick(event, this);"> 清除</span></nobr>' );
-                    popup.showAnchor( link );
-                }
-                if ( html ) {
-                    popup.getDom( 'content' ).innerHTML = html;
-                    popup.anchorEl = img || link;
-                    popup.showAnchor( popup.anchorEl );
-                } else {
-                    popup.hide();
-                }
-            } );
+                } );
+            }
+
         },
         _initToolbars: function () {
             var editor = this.editor;
@@ -510,7 +499,12 @@
 
                         holder.className && (newDiv.className = holder.className);
                         holder.style.cssText && (newDiv.style.cssText = holder.style.cssText);
-                        holder.parentNode.removeChild( holder );
+                        if(/textarea/i.test(holder.tagName)){
+                            editor.textarea = holder;
+                            editor.textarea.style.display = 'none'
+                        }else{
+                            holder.parentNode.removeChild( holder )
+                        }
                         holder = newDiv;
                         holder.innerHTML = '';
                     }

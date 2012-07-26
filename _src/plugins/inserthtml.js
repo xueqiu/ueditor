@@ -25,7 +25,6 @@
                 html = serialize.toHTML(node);
             }
             div.innerHTML = utils.trim( html );
-
             try{
                 me.adjustTable && me.adjustTable(div);
             }catch(e){}

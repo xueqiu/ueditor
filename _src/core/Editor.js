@@ -28,7 +28,30 @@
          }
 
     }
+    function setValue(form,editor){
+        var textarea;
+        if(editor.textarea){
+            if(utils.isString(editor.textarea)){
+                for(var i= 0,ti,tis=domUtils.getElementsByTagName(form,'textarea');ti=tis[i++];){
+                    if(ti.id == 'ueditor_textarea_' + editor.options.textarea){
+                        textarea = ti;
+                        break;
+                    }
 
+                }
+            }else{
+                textarea = editor.textarea;
+            }
+        }
+        if(!textarea){
+            form.appendChild(textarea = domUtils.creElm(document,'textarea',{
+                'name' : editor.options.textarea,
+                'id' : 'ueditor_textarea_' + editor.options.textarea,
+                'style' : "display:none"
+            }));
+        }
+        textarea.value = editor.getContent()
+    }
     /**
      * 编辑器类
      * @public
@@ -117,7 +140,8 @@
                 '<style id="editorinitialstyle" type="text/css">' +
                 //这些默认属性不能够让用户改变
                 //选中的td上的样式
-                '.selectTdClass{background-color:#3399FF !important}' +
+                '.selectTdClass{background-color:#3399FF !important;}' +
+                'table.noBorderTable td{border:1px dashed #ddd !important}'+
                 //插入的表格的默认样式
                 'table{clear:both;margin-bottom:10px;border-collapse:collapse;word-break:break-all;}' +
                 //分页符的样式
@@ -153,9 +177,7 @@
             me.body = doc.body;
 
             //设置编辑器最小高度
-            var height = options.minFrameHeight;
-            me.setHeight(height);
-            me.body.style.height = height + 'px';
+            me.setHeight(options.minFrameHeight);
 
             me.selection = new dom.Selection( doc );
             //gecko初始化就能得到range,无法判断isFocus了
@@ -179,23 +201,7 @@
 
                 if(form.tagName == 'FORM'){
                     domUtils.on(form,'submit',function(){
-                        for(var textarea,i= 0,ti,tis=domUtils.getElementsByTagName(form,'textarea');ti=tis[i++];){
-                            if(ti.id == 'ueditor_textarea_' + me.options.textarea){
-                                textarea = ti;
-                                break;
-                            }
-
-                        }
-
-                        if(!textarea ){
-                            textarea = document.createElement('textarea');
-                            textarea.setAttribute('name',me.options.textarea);
-                            textarea.id = 'ueditor_textarea_' + me.options.textarea;
-                            textarea.style.display = 'none';
-                            this.appendChild(textarea);
-                        }
-                        textarea.value = me.getContent();
-
+                        setValue(this,me)
                     });
                     break;
                 }
@@ -256,37 +262,9 @@
 
         sync : function(formId){
             var me = this,
-                form;
-            function setValue(form){
-                for(var textarea,i= 0,ti,tis=domUtils.getElementsByTagName(form,'textarea');ti=tis[i++];){
-                    if(ti.id == 'ueditor_textarea_' + me.options.textarea){
-                        textarea = ti;
-                        break;
-                    }
-
-                }
-
-                if(!textarea){
-                    textarea = document.createElement('textarea');
-                    textarea.setAttribute('name',me.options.textarea);
-                    textarea.id = 'ueditor_textarea_' + me.options.textarea;
-                    textarea.style.display = 'none';
-                    form.appendChild(textarea);
-                }
-                textarea.value = me.getContent()
-            }
-            if(formId){
-                form = document.getElementById(formId);
-                form && setValue(form);
-            }else{
-                for(form = me.iframe.parentNode;!domUtils.isBody(form);form = form.parentNode){
-                    if(form.tagName == 'FORM'){
-                        setValue(form);
-                        break;
-                    }
-                }
-            }
-
+                form = formId ? document.getElementById(formId) :
+                    domUtils.findParent(me.iframe.parentNode,function(node){return node.tagName == 'FORM'},true);
+            form && setValue(form,me);
         },
         /**
          * 设置编辑器高度
@@ -299,10 +277,7 @@
                 this.iframe.parentNode.style.height = height  +  'px';
 
             }
-            //ie9下body 高度100%失效，改为手动设置
-            if(browser.ie && browser.version == 9){
-                this.document.body.style.height = height - 20 + 'px'
-            }
+            this.document.body.style.height = height - 20 + 'px'
         },
 
         /**
@@ -608,10 +583,11 @@
         _callCmdFn: function ( fnName, args ) {
             var cmdName = args[0].toLowerCase(),
                 cmd, cmdFn;
-            cmdFn = ( cmd = this.commands[cmdName] ) && cmd[fnName] ||
-                ( cmd = UE.commands[cmdName]) && cmd[fnName];
-            if ( cmd && !cmdFn && fnName == 'queryCommandState' ) {
-                return false;
+            cmd =  this.commands[cmdName] ||  UE.commands[cmdName];
+            cmdFn = cmd && cmd[fnName];
+            //没有querycommandstate或者没有command的都默认返回0
+            if ( (!cmd || !cmdFn) && fnName == 'queryCommandState' ) {
+                return 0;
             } else if ( cmdFn ) {
                 return cmdFn.apply( this, args );
             }
@@ -711,24 +687,28 @@
         /**
          * 设置编辑区域可以编辑
          */
-        setEnabled : function(exclude){
+        setEnabled : function(){
             var me = this,range;
-            me.body.contentEditable = true;
-            range = me.selection.getRange();
-            //有可能内容丢失了
-            try{
-                range.moveToBookmark(me.lastBk);
-                delete me.lastBk
-            }catch(e){
-                range.setStartAtFirst(me.body).collapse(true)
-            }
-            range.select(true);
-            if(me.bkqueryCommandState){
-                me.queryCommandState = me.bkqueryCommandState;
-                delete me.bkqueryCommandState;
+            if(me.body.contentEditable == 'false'){
+                me.body.contentEditable = true;
+                range = me.selection.getRange();
+                //有可能内容丢失了
+                try{
+                    range.moveToBookmark(me.lastBk);
+                    delete me.lastBk
+                }catch(e){
+                    range.setStartAtFirst(me.body).collapse(true)
+                }
+                range.select(true);
+                if(me.bkqueryCommandState){
+                    me.queryCommandState = me.bkqueryCommandState;
+                    delete me.bkqueryCommandState;
+                }
+
+                me.fireEvent( 'selectionchange');
             }
 
-            me.fireEvent( 'selectionchange');
+
         },
         /**
          * 设置编辑区域不可以编辑
@@ -736,17 +716,23 @@
         setDisabled : function(exclude){
             var me = this;
             exclude = exclude ? utils.isArray(exclude) ? exclude : [exclude] : [];
-            me.lastBk = me.selection.getRange().createBookmark(true);
-            me.body.contentEditable = false;
-            me.bkqueryCommandState = me.queryCommandState;
-            me.queryCommandState =function(type){
-                if(utils.indexOf(exclude,type)!=-1){
-                    me.bkqueryCommandState.apply(me,arguments)
+            if(me.body.contentEditable == 'true'){
+                if(!me.lastBk){
+                    me.lastBk = me.selection.getRange().createBookmark(true);
                 }
+                me.body.contentEditable = false;
+                me.bkqueryCommandState = me.queryCommandState;
+                me.queryCommandState =function(type){
+                    if(utils.indexOf(exclude,type)!=-1){
+                        return me.bkqueryCommandState.apply(me,arguments)
+                    }
 
-                return -1;
-            };
-            me.fireEvent( 'selectionchange');
+                    return -1;
+                };
+                me.fireEvent( 'selectionchange');
+            }
+
+
 
         },
         /**
@@ -810,7 +796,9 @@
          */
         setHide : function(){
             var me = this;
-            me.lastBk = me.selection.getRange().createBookmark(true);
+            if(!me.lastBk){
+                me.lastBk = me.selection.getRange().createBookmark(true);
+            }
             me.container.style.display = 'none'
         }
 

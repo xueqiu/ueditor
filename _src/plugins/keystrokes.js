@@ -90,20 +90,22 @@ UE.plugins['keystrokes'] = function() {
                     evt.preventDefault();
                     return;
                 }
-                if (browser.webkit && range.collapsed && start) {
-                    tmpRange = range.cloneRange().txtToElmBoundary();
-                    start = tmpRange.startContainer;
-
-                    if (domUtils.isBlockElm(start) && start.nodeType == 1 && !dtd.$tableContent[start.tagName] && !domUtils.getChildCount(start, function(node) {
-                        return node.nodeType == 1 ? node.tagName !== 'BR' : 1;
-                    })) {
-
-                        tmpRange.setStartBefore(start).setCursor();
-                        domUtils.remove(start, true);
-                        evt.preventDefault();
-                        return;
-                    }
-                }
+                //表格里回车，删除时，光标被定位到了p外边，导致多次删除才能到上一行，这里的处理忘记是为什么，暂时注视掉
+                //解决trace:1966的问题
+//                if (browser.webkit && range.collapsed && start) {
+//                    tmpRange = range.cloneRange().txtToElmBoundary();
+//                    start = tmpRange.startContainer;
+//                           debugger
+//                    if (domUtils.isBlockElm(start) && !dtd.$tableContent[start.tagName] && !domUtils.getChildCount(start, function(node) {
+//                        return node.nodeType == 1 ? node.tagName !== 'BR' : 1;
+//                    })) {
+//
+//                        tmpRange.setStartBefore(start).setCursor();
+//                        domUtils.remove(start, true);
+//                        evt.preventDefault();
+//                        return;
+//                    }
+//                }
             }
 
 

@@ -147,14 +147,16 @@ UE.plugins['contextmenu'] = function () {
                 cmdName:'copy',
                 exec:function () {
                     alert( "请使用ctrl+c进行复制" );
-                }
+                },
+                query : function(){return 0;}
             },
             {
                 label:'粘贴(ctrl+v)',
                 cmdName:'paste',
                 exec:function () {
                     alert( "请使用ctrl+v进行粘贴" );
-                }
+                },
+                query : function(){return 0;}
             }
         ];
     if(!items.length)return;
@@ -179,7 +181,8 @@ UE.plugins['contextmenu'] = function () {
                                         subMenu.push('-');
 
                                 } else {
-                                    if (me.queryCommandState(subItem.cmdName) > -1) {
+                                    if ((me.commands[subItem.cmdName] ||  UE.commands[subItem.cmdName]||subItem.query) &&
+                                        (subItem.query ? subItem.query() : me.queryCommandState(subItem.cmdName)) > -1) {
                                         subMenu.push({
                                             'label':subItem.label,
                                             className: 'edui-for-' + subItem.cmdName + (subItem.value || ''),
@@ -208,7 +211,9 @@ UE.plugins['contextmenu'] = function () {
                         }
 
                 } else {
-                    if (me.queryCommandState(item.cmdName) > -1) {
+                    //有可能commmand没有加载右键不能出来，或者没有command也想能展示出来添加query方法
+                    if ((me.commands[item.cmdName] ||  UE.commands[item.cmdName]||item.query) &&
+                        (item.query ? item.query() : me.queryCommandState(item.cmdName)) > -1) {
                         //highlight todo
                         if(item.cmdName == 'highlightcode' && me.queryCommandState(item.cmdName) == 0)
                             return;

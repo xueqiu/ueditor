@@ -848,6 +848,9 @@
                 elm.removeAttribute(ci);
             }
         },
+        creElm : function(doc,tag,attrs){
+            return this.setAttributes(doc.createElement(tag),attrs)
+        },
         /**
          * 给节点添加属性
          * @function

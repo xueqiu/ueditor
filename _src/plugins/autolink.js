@@ -61,7 +61,16 @@
                         try{
                             range.setStart(range.startContainer,range.startOffset+1)
                         }catch(e){
-                            range.setStart(range.startContainer.nextSibling,0)
+                            //trace:2121
+                            var start = range.startContainer;
+                            while(!(next = start.nextSibling)){
+                                if(domUtils.isBody(start)){
+                                    return;
+                                }
+                                start = start.parentNode;
+
+                            }
+                            range.setStart(next,0)
 
                         }
 

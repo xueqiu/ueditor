@@ -64,27 +64,31 @@
 
     };
     function doLink(range,opt){
-
         optimize( range = range.adjustmentBoundary() );
         var start = range.startContainer;
         if(start.nodeType == 1){
             start = start.childNodes[range.startOffset];
             if(start && start.nodeType == 1 && start.tagName == 'A' && /^(?:https?|ftp|file)\s*:\s*\/\//.test(start[browser.ie?'innerText':'textContent'])){
-                start.innerHTML = opt.href;
+                start[browser.ie ? 'innerText' : 'textContent'] =  utils.html(opt.textValue||opt.href);
+
             }
         }
         range.removeInlineStyle( 'a' );
         if ( range.collapsed ) {
-            var a = range.document.createElement( 'a' );
+            var a = range.document.createElement( 'a'),
+                text = '';
             if(opt.textValue){
-                a.innerHTML = opt.textValue;
+
+                text =   utils.html(opt.textValue);
                 delete opt.textValue;
             }else{
-                a.innerHTML = opt.href;
+                text =   utils.html(opt.href);
+
             }
             domUtils.setAttributes( a, opt );
-
-            range.insertNode( a ).selectNode( a );
+            range.insertNode( a );
+            a[browser.ie ? 'innerText' : 'textContent'] = text;
+            range.selectNode( a );
         } else {
             range.applyInlineStyle( 'a', opt )
 
@@ -97,11 +101,14 @@
         execCommand : function( cmdName, opt ) {
             var range = new dom.Range(this.document),
                 tds = this.currentSelectedArr;
-            
+
+            opt.data_ue_src && (opt.data_ue_src = utils.unhtml(opt.data_ue_src));
+            opt.href && (opt.href = utils.unhtml(opt.href));
+            opt.textValue && (opt.textValue = utils.unhtml(opt.textValue));
             if(tds && tds.length){
                 for(var i=0,ti;ti=tds[i++];){
                     if(domUtils.isEmptyNode(ti)){
-                        ti.innerHTML = opt.href
+                        ti[browser.ie ? 'innerText' : 'textContent'] =   utils.html(opt.textValue || opt.href)
                     }
                     doLink(range.selectNodeContents(ti),opt)
                 }
@@ -110,8 +117,8 @@
                
             }else{
                 doLink(range=this.selection.getRange(),opt);
-
-                range.collapse().select(browser.gecko ? true : false);
+                //闭合都不加占位符，如果加了会在a后边多个占位符节点，导致a是图片背景组成的列表，出现空白问题
+                range.collapse().select(true);
 
             }
         },
