@@ -34,8 +34,8 @@
                         'div':{'br':1,'BR':1,'$':{}},
                         'li':{'$':{}},
                         'img':{'$':{'height':1,'width':1,'src':1,'class':1}},
-                        'span':{'$':{'style':1}},
-                        'strong':{'span':1}
+                        'span':{'br':1,'$':{'style':1}},
+                        'strong':{'br':1,'span':1}
                     },
                     blackList: {
                         'style':1,
