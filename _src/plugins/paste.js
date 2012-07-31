@@ -10,6 +10,54 @@
  * @author zhanyi
  */
 (function() {
+    var browser = UE.browser
+    var pasteFilter = UE.pasteFilter = function(html, editor) {
+        var f = editor.serialize;
+        var word_img_flag = editor.paste_options.word_img_flag
+        var modify_num = editor.paste_options.modify_num
+        var pasteplain = editor.options.pasteplain
+        if(f){
+            //如果过滤出现问题，捕获它，直接插入内容，避免出现错误导致粘贴整个失败
+            try{
+                var node =  f.transformInput(
+                            f.parseHTML(
+                                //todo: 暂时不走dtd的过滤
+                                f.word(html)//, true
+                            ),word_img_flag
+                        );
+                //trace:924
+                //纯文本模式也要保留段落
+                node = f.filter(node,pasteplain ? {
+                    whiteList: {
+                        'p': {'br':1,'BR':1},
+                        'br':{'$':{}},
+                        'div':{'br':1,'BR':1,'$':{}},
+                        'li':{'$':{}},
+                        'img':{'$':{'height':1,'width':1,'src':1,'class':1}},
+                        'span':{'$':{'style':1}},
+                        'strong':{'span':1}
+                    },
+                    blackList: {
+                        'style':1,
+                        'script':1,
+                        'object':1
+                    }
+                } : null, !pasteplain ? modify_num : null);
+
+                if(browser.webkit){
+                    var length = node.children.length,
+                        child;
+                    while((child = node.children[length-1]) && child.tag == 'br'){
+                        node.children.splice(length-1,1);
+                        length = node.children.length;
+                    }
+                }
+                html = f.toHTML(node,pasteplain)
+
+            }catch(e){}
+        }
+        return html;
+    };
     function getClipboardData( callback ) {
 
         var doc = this.document;
@@ -67,10 +115,11 @@
 
     UE.plugins['paste'] = function() {
         var me = this;
-        var word_img_flag = {flag:""};
+        var po = me.paste_options = {}
+        var word_img_flag = po.word_img_flag = {flag:""};
 
         var pasteplain = me.options.pasteplain === true;
-        var modify_num = {flag:""};
+        var modify_num = po.modify_num = {flag:""};
         me.commands['pasteplain'] = {
             queryCommandState: function (){
                 return pasteplain;
@@ -148,50 +197,7 @@
                       html = SNB.Util.parseContent(html, true)
                     }
 
-                    var f = me.serialize;
-                    if(f){
-                        //如果过滤出现问题，捕获它，直接插入内容，避免出现错误导致粘贴整个失败
-                        try{
-                            var node =  f.transformInput(
-                                        f.parseHTML(
-                                            //todo: 暂时不走dtd的过滤
-                                            f.word(html)//, true
-                                        ),word_img_flag
-                                    );
-                            //trace:924
-                            //纯文本模式也要保留段落
-                            node = f.filter(node,pasteplain ? {
-                                whiteList: {
-                                    'p': {'br':1,'BR':1},
-                                    'br':{'$':{}},
-                                    'div':{'br':1,'BR':1,'$':{}},
-                                    'li':{'$':{}},
-                                    'img':{'$':{'height':1,'width':1,'src':1}},
-                                    'tr':{'td':1,'$':{}},
-                                    'td':{'$':{}}
-
-                                },
-                                blackList: {
-                                    'style':1,
-                                    'script':1,
-                                    'object':1
-                                }
-                            } : null, !pasteplain ? modify_num : null);
-
-                            if(browser.webkit){
-                                var length = node.children.length,
-                                    child;
-                                while((child = node.children[length-1]) && child.tag == 'br'){
-                                    node.children.splice(length-1,1);
-                                    length = node.children.length;
-                                }
-                            }
-                            html = f.toHTML(node,pasteplain)
-
-                        }catch(e){}
-
-                    }
-
+                    html = pasteFilter(html, me)
 
                     //自定义的处理
                    html = {'html':html};
