@@ -10,6 +10,10 @@ UE.plugins = {};
 
 UE.commands = {};
 
+UE.instants = {};
+
+UE.I18N = {};
+
 //UE.defaultplugins = {};
 //
 //UE.commands = function(){
@@ -32,7 +36,6 @@ UE.commands = {};
 //    }
 //}();
 
-
-UE.version = "1.2.2.0";
+UE.version = "1.2.3.0";
 
 var dom = UE.dom = {};

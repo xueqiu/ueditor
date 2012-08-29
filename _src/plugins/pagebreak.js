@@ -44,6 +44,13 @@ UE.plugins['pagebreak'] = function () {
                         pN = node.parentNode;
                         if (!pN.previousSibling) {
                             var table = domUtils.findParentByTagName(pN, 'table');
+//                            var tableWrapDiv = table.parentNode;
+//                            if(tableWrapDiv && tableWrapDiv.nodeType == 1
+//                                && tableWrapDiv.tagName == 'DIV'
+//                                && tableWrapDiv.getAttribute('dropdrag')
+//                                ){
+//                                domUtils.remove(tableWrapDiv,true);
+//                            }
                             table.parentNode.insertBefore(hr, table);
                             parents = domUtils.findParents(hr, true);
 
@@ -55,10 +62,11 @@ UE.plugins['pagebreak'] = function () {
                         pN = parents[1];
                         if (hr !== pN) {
                             domUtils.breakParent(hr, pN);
+
                         }
-
-
                         domUtils.clearSelectedArr(me.currentSelectedArr);
+                        //table要重写绑定一下拖拽
+                        me.fireEvent('afteradjusttable',me.document);
                 }
 
             } else {
@@ -80,14 +88,14 @@ UE.plugins['pagebreak'] = function () {
                     domUtils.breakParent(hr, pN);
                     nextNode = hr.nextSibling;
                     if (nextNode && domUtils.isEmptyBlock(nextNode)) {
-                        domUtils.remove(nextNode)
+                        domUtils.remove(nextNode);
                     }
                     pN = hr.parentNode;
                 }
                 nextNode = hr.nextSibling;
                 var pre = hr.previousSibling;
                 if(isHr(pre)){
-                    domUtils.remove(pre)
+                    domUtils.remove(pre);
                 }else{
                     pre && fillNode(pre);
                 }
@@ -97,17 +105,17 @@ UE.plugins['pagebreak'] = function () {
 
                     hr.parentNode.appendChild(p);
                     domUtils.fillNode(me.document,p);
-                    range.setStart(p,0).collapse(true)
+                    range.setStart(p,0).collapse(true);
                 }else{
                     if(isHr(nextNode)){
-                        domUtils.remove(nextNode)
+                        domUtils.remove(nextNode);
                     }else{
                         fillNode(nextNode);
                     }
-                    range.setEndAfter(hr).collapse(false)
+                    range.setEndAfter(hr).collapse(false);
                 }
 
-                range.select(true)
+                range.select(true);
 
             }
 
@@ -115,5 +123,5 @@ UE.plugins['pagebreak'] = function () {
         queryCommandState:function () {
             return this.highlight ? -1 : 0;
         }
-    }
+    };
 };

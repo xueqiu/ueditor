@@ -14,22 +14,27 @@
          * 注册事件监听器
          * @public
          * @function
-         * @param {String} type 事件名
+         * @param {String} types 事件名
          * @param {Function} listener 监听器数组
          */
-        addListener : function ( type, listener ) {
-            getListener( this, type, true ).push( listener );
+        addListener : function ( types, listener ) {
+            types = utils.trim(types).split(' ');
+            for(var i= 0,ti;ti=types[i++];){
+                getListener( this, ti, true ).push( listener );
+            }
         },
         /**
          * 移除事件监听器
          * @public
          * @function
-         * @param {String} type 事件名
+         * @param {String} types 事件名
          * @param {Function} listener 监听器数组
          */
-        removeListener : function ( type, listener ) {
-            var listeners = getListener( this, type );
-            listeners && utils.removeItem( listeners, listener );
+        removeListener : function ( types, listener ) {
+            types = utils.trim(types).split(' ');
+            for(var i= 0,ti;ti=types[i++];){
+                utils.removeItem( getListener( this, ti ) || [], listener );
+            }
         },
         /**
          * 触发事件
@@ -38,23 +43,23 @@
          * @param {String} type 事件名
          * 
          */
-        fireEvent : function ( type ) {
-            var listeners = getListener( this, type ),
-                r, t, k;
-            if ( listeners ) {
-
-                k = listeners.length;
-                while ( k -- ) {
-                    t = listeners[k].apply( this, arguments );
-                    if ( t !== undefined ) {
-                        r = t;
+        fireEvent : function ( types ) {
+            types = utils.trim(types).split(' ');
+            for(var i= 0,ti;ti=types[i++];){
+                var listeners = getListener( this, ti ),
+                    r, t, k;
+                if ( listeners ) {
+                    k = listeners.length;
+                    while ( k -- ) {
+                        t = listeners[k].apply( this, arguments );
+                        if ( t !== undefined ) {
+                            r = t;
+                        }
                     }
-
                 }
-                
-            }
-            if ( t = this['on' + type.toLowerCase()] ) {
-                r = t.apply( this, arguments );
+                if ( t = this['on' + ti.toLowerCase()] ) {
+                    r = t.apply( this, arguments );
+                }
             }
             return r;
         }

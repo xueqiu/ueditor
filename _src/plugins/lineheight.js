@@ -22,7 +22,7 @@ UE.plugins['lineheight'] = function(){
             var pN = utils.findNode(this.selection.getStartElementPath(),null,function(node){return domUtils.isBlockElm(node)});
             if(pN){
                 var value = domUtils.getComputedStyle(pN,'line-height');
-                return value == 'normal' ? 1 : value.replace(/[^\d.]*/ig,"")
+                return value == 'normal' ? 1 : value.replace(/[^\d.]*/ig,"");
             }
         },
         queryCommandState : function(){

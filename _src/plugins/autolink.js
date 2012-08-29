@@ -28,8 +28,9 @@
                 var start = range.startContainer;
                 while (start.nodeType == 1 && range.startOffset > 0) {
                     start = range.startContainer.childNodes[range.startOffset - 1];
-                    if (!start)
+                    if (!start){
                         break;
+                    }
                     range.setStart(start, start.nodeType == 1 ? start.childNodes.length : start.nodeValue.length);
                     range.collapse(true);
                     start = range.startContainer;
@@ -42,8 +43,9 @@
                         while (start && start.nodeType == 1) {
                             start = start.lastChild;
                         }
-                        if (!start || domUtils.isFillChar(start))
+                        if (!start || domUtils.isFillChar(start)){
                             break;
+                        }
                         offset = start.nodeValue.length;
                     } else {
                         start = range.startContainer;
@@ -59,7 +61,7 @@
                             break;
                         }
                         try{
-                            range.setStart(range.startContainer,range.startOffset+1)
+                            range.setStart(range.startContainer,range.startOffset+1);
                         }catch(e){
                             //trace:2121
                             var start = range.startContainer;
@@ -70,7 +72,7 @@
                                 start = start.parentNode;
 
                             }
-                            range.setStart(next,0)
+                            range.setStart(next,0);
 
                         }
 
@@ -94,5 +96,5 @@
                     me.undoManger && me.undoManger.save();
                 }
             }
-        })
+        });
     };

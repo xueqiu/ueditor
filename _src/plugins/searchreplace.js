@@ -42,7 +42,7 @@ UE.plugins['searchreplace'] = function(){
                             opt.dir = 1;
                             
                             if(currentRange){
-                                tmpRange.setEndPoint(opt.dir == -1 ? 'EndToStart' : 'StartToEnd',currentRange)
+                                tmpRange.setEndPoint(opt.dir == -1 ? 'EndToStart' : 'StartToEnd',currentRange);
                             }
                         }else{
                             tmpRange.setEndPoint(opt.dir == -1 ? 'EndToStart' : 'StartToEnd',nativeRange);
@@ -69,7 +69,9 @@ UE.plugins['searchreplace'] = function(){
 
                         }
                         num++;
-                        if(!opt.all)break;
+                        if(!opt.all){
+                            break;
+                        }
                     }
                 }else{
                     var w = me.window,nativeSel = sel.getNative(),tmpRange;
@@ -126,12 +128,14 @@ UE.plugins['searchreplace'] = function(){
                             }
                         }
                         num++;
-                        if(!opt.all)break;
+                        if(!opt.all){
+                            break;
+                        }
                     }
 
                 }
                 return true;
             }
-    }
+    };
 
 };

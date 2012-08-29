@@ -37,7 +37,7 @@
             })));
             this.closeButton = new Button({
                 className: 'edui-dialog-closebutton',
-                title: '关闭对话框',
+                title: me.closeDialog,
                 onclick: function (){
                     me.close(false);
                 }
