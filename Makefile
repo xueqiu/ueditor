@@ -22,4 +22,4 @@ src = _src/editor_seajs_start.js\
 dafault: concat
 
 concat:
-	cat $(src) | sed 's/\r//' > ueditor.js
+	cat $(src) > ueditor.js
