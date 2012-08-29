@@ -30,7 +30,7 @@ UE.plugins['autoheight'] = function () {
                 tmpNode = span.cloneNode(true);
                 me.body.appendChild(tmpNode);
 
-                currentHeight = Math.max(domUtils.getXY(tmpNode).y, me.options.minFrameHeight);
+                currentHeight = Math.max(domUtils.getXY(tmpNode).y + tmpNode.offsetHeight, me.options.minFrameHeight);
 
                 if (currentHeight != lastHeight) {
 
