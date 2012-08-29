@@ -69,7 +69,7 @@ UE.plugins['keystrokes'] = function() {
             }
 
             if (range.collapsed && range.startContainer.nodeType == 3 && range.startContainer.nodeValue.replace(new RegExp(domUtils.fillChar, 'g'), '').length == 0) {
-                range.setStartBefore(range.startContainer).collapse(true)
+                range.setStartBefore(range.startContainer).collapse(true);
             }
             //解决选中control元素不能删除的问题
             if (start = range.getClosedNode()) {
@@ -90,20 +90,22 @@ UE.plugins['keystrokes'] = function() {
                     evt.preventDefault();
                     return;
                 }
-                if (browser.webkit && range.collapsed && start) {
-                    tmpRange = range.cloneRange().txtToElmBoundary();
-                    start = tmpRange.startContainer;
-
-                    if (domUtils.isBlockElm(start) && start.nodeType == 1 && !dtd.$tableContent[start.tagName] && !domUtils.getChildCount(start, function(node) {
-                        return node.nodeType == 1 ? node.tagName !== 'BR' : 1;
-                    })) {
-
-                        tmpRange.setStartBefore(start).setCursor();
-                        domUtils.remove(start, true);
-                        evt.preventDefault();
-                        return;
-                    }
-                }
+                //表格里回车，删除时，光标被定位到了p外边，导致多次删除才能到上一行，这里的处理忘记是为什么，暂时注视掉
+                //解决trace:1966的问题
+//                if (browser.webkit && range.collapsed && start) {
+//                    tmpRange = range.cloneRange().txtToElmBoundary();
+//                    start = tmpRange.startContainer;
+//                           debugger
+//                    if (domUtils.isBlockElm(start) && !dtd.$tableContent[start.tagName] && !domUtils.getChildCount(start, function(node) {
+//                        return node.nodeType == 1 ? node.tagName !== 'BR' : 1;
+//                    })) {
+//
+//                        tmpRange.setStartBefore(start).setCursor();
+//                        domUtils.remove(start, true);
+//                        evt.preventDefault();
+//                        return;
+//                    }
+//                }
             }
 
 
@@ -140,10 +142,11 @@ UE.plugins['keystrokes'] = function() {
 
                     parentLi.insertBefore(list, li);
                     list.appendChild(li);
-                    range.moveToBookmark(bk).select()
+                    range.moveToBookmark(bk).select();
 
-                } else
+                } else{
                     range.insertNode(span.cloneNode(true).firstChild).setCursor(true);
+                }
 
             } else {
                 //处理table
@@ -151,7 +154,7 @@ UE.plugins['keystrokes'] = function() {
                 end = domUtils.findParentByTagName(range.endContainer, 'table', true);
                 if (start || end) {
                     evt.preventDefault ? evt.preventDefault() : (evt.returnValue = false);
-                    return
+                    return;
                 }
                 //处理列表 再一个list里处理
                 start = domUtils.findParentByTagName(range.startContainer, ['ol','ul'], true);
@@ -167,7 +170,7 @@ UE.plugins['keystrokes'] = function() {
                         start.parentNode.parentNode.insertBefore(parentList, start.parentNode);
                         parentList.appendChild(start.parentNode);
                     } else {
-                        parentLi = start.parentNode,
+                        parentLi = start.parentNode;
                             list = me.document.createElement(parentLi.tagName);
 
                         index = utils.indexOf(listStyle[list.tagName], domUtils.getComputedStyle(parentLi, 'list-style-type'));

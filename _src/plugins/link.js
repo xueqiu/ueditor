@@ -23,10 +23,10 @@
         var start = range.startContainer,end = range.endContainer;
 
         if ( start = domUtils.findParentByTagName( start, 'a', true ) ) {
-            range.setStartBefore( start )
+            range.setStartBefore( start );
         }
         if ( end = domUtils.findParentByTagName( end, 'a', true ) ) {
-            range.setEndAfter( end )
+            range.setEndAfter( end );
         }
     }
 
@@ -46,7 +46,7 @@
                 if(domUtils.isEmptyNode(tds[0])){
                     range.setStart(tds[0],0).setCursor();
                 }else{
-                    range.selectNodeContents(tds[0]).select()
+                    range.selectNodeContents(tds[0]).select();
                 }
             }else{
                 range = this.selection.getRange();
@@ -64,29 +64,33 @@
 
     };
     function doLink(range,opt){
-
         optimize( range = range.adjustmentBoundary() );
         var start = range.startContainer;
         if(start.nodeType == 1){
             start = start.childNodes[range.startOffset];
             if(start && start.nodeType == 1 && start.tagName == 'A' && /^(?:https?|ftp|file)\s*:\s*\/\//.test(start[browser.ie?'innerText':'textContent'])){
-                start.innerHTML = opt.href;
+                start[browser.ie ? 'innerText' : 'textContent'] =  utils.html(opt.textValue||opt.href);
+
             }
         }
         range.removeInlineStyle( 'a' );
         if ( range.collapsed ) {
-            var a = range.document.createElement( 'a' );
+            var a = range.document.createElement( 'a'),
+                text = '';
             if(opt.textValue){
-                a.innerHTML = opt.textValue;
+
+                text =   utils.html(opt.textValue);
                 delete opt.textValue;
             }else{
-                a.innerHTML = opt.href;
+                text =   utils.html(opt.href);
+
             }
             domUtils.setAttributes( a, opt );
-
-            range.insertNode( a ).selectNode( a );
+            range.insertNode( a );
+            a[browser.ie ? 'innerText' : 'textContent'] = text;
+            range.selectNode( a );
         } else {
-            range.applyInlineStyle( 'a', opt )
+            range.applyInlineStyle( 'a', opt );
 
         }
     }
@@ -95,23 +99,27 @@
             return this.highlight ? -1 :0;
         },
         execCommand : function( cmdName, opt ) {
+
             var range = new dom.Range(this.document),
                 tds = this.currentSelectedArr;
-            
+
+            opt.data_ue_src && (opt.data_ue_src = utils.unhtml(opt.data_ue_src,/[<">]/g));
+            opt.href && (opt.href = utils.unhtml(opt.href,/[<">]/g));
+            opt.textValue && (opt.textValue = utils.unhtml(opt.textValue,/[<">]/g));
             if(tds && tds.length){
                 for(var i=0,ti;ti=tds[i++];){
                     if(domUtils.isEmptyNode(ti)){
-                        ti.innerHTML = opt.href
+                        ti[browser.ie ? 'innerText' : 'textContent'] =   utils.html(opt.textValue || opt.href);
                     }
-                    doLink(range.selectNodeContents(ti),opt)
+                    doLink(range.selectNodeContents(ti),opt);
                 }
-                range.selectNodeContents(tds[0]).select()
+                range.selectNodeContents(tds[0]).select();
 
                
             }else{
                 doLink(range=this.selection.getRange(),opt);
-
-                range.collapse().select(browser.gecko ? true : false);
+                //闭合都不加占位符，如果加了会在a后边多个占位符节点，导致a是图片背景组成的列表，出现空白问题
+                range.collapse().select(true);
 
             }
         },
@@ -124,8 +132,9 @@
             if(tds && tds.length){
                 for(var i=0,ti;ti=tds[i++];){
                     as = ti.getElementsByTagName('a');
-                    if(as[0])
-                        return as[0]
+                    if(as[0]){
+                        return as[0];
+                    }
                 }
             }else{
                 range = this.selection.getRange();

@@ -15,14 +15,16 @@ UE.plugins['wordcount'] = function(){
     me.setOpt({
         wordCount:true,
         maximumWords:10000,
-        wordCountMsg:'当前已输入 {#count} 个字符，您还可以输入{#leave} 个字符 ',
-        wordOverFlowMsg:'<span style="color:red;">你输入的字符个数已经超出最大允许值，服务器可能会拒绝保存！</span>'
+        wordCountMsg: me.options.wordCountMsg||me.getLang("wordCountMsg"),
+        wordOverFlowMsg:me.options.wordOverFlowMsg||me.getLang("wordOverFlowMsg")
     });
     var opt = me.options,
         max = opt.maximumWords,
         msg = opt.wordCountMsg ,
         errMsg = opt.wordOverFlowMsg;
-    if(!opt.wordCount)return;
+    if(!opt.wordCount){
+        return;
+    }
     me.commands["wordcount"]={
         queryCommandValue:function(cmd,onlyCount){
             var length,contentText,reg;
@@ -36,10 +38,10 @@ UE.plugins['wordcount'] = function(){
             length = contentText.length;
             if(max-length<0){
                 me.fireEvent('wordcountoverflow');
-                return errMsg
+                return errMsg;
             }
 
-            return msg.replace("{#leave}",max-length >= 0 ? max-length:0).replace("{#count}",length);;
+            return msg.replace("{#leave}",max-length >= 0 ? max-length:0).replace("{#count}",length);
         }
     };
 };

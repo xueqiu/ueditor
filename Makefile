@@ -1,4 +1,6 @@
 src = _src/editor_seajs_start.js\
+	  _src/editor.js\
+	  _src/core/browser.js\
 	  _src/core/browser.js\
 	  _src/core/utils.js\
 	  _src/core/EventBase.js\

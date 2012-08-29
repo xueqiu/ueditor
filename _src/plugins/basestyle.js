@@ -37,11 +37,12 @@ UE.plugins['basestyle'] = function(){
                                 !obj && (obj = getObj(this,tagNames));
                                 if(cmdName == 'superscript' || cmdName == 'subscript'){
                                     
-                                    if(!obj || obj.tagName.toLowerCase() != cmdName)
-                                        range.removeInlineStyle(['sub','sup'])
+                                    if(!obj || obj.tagName.toLowerCase() != cmdName){
+                                        range.removeInlineStyle(['sub','sup']);
+                                    }
 
                                 }
-                                obj ? range.removeInlineStyle( tagNames ) : range.applyInlineStyle( tagNames[0] )
+                                obj ? range.removeInlineStyle( tagNames ) : range.applyInlineStyle( tagNames[0] );
                             }
 
                         }
@@ -73,15 +74,16 @@ UE.plugins['basestyle'] = function(){
 
 
                             }
-                            range.collapse( true )
+                            range.collapse( true );
 
                         } else {
                             if(cmdName == 'superscript' || cmdName == 'subscript'){
-                                if(!obj || obj.tagName.toLowerCase() != cmdName)
-                                    range.removeInlineStyle(['sub','sup'])
+                                if(!obj || obj.tagName.toLowerCase() != cmdName){
+                                    range.removeInlineStyle(['sub','sup']);
+                                }
 
                             }
-                            obj ? range.removeInlineStyle( tagNames ) : range.applyInlineStyle( tagNames[0] )
+                            obj ? range.removeInlineStyle( tagNames ) : range.applyInlineStyle( tagNames[0] );
                         }
 
                         range.select();
@@ -96,7 +98,7 @@ UE.plugins['basestyle'] = function(){
                    }
                    return getObj(this,tagNames) ? 1 : 0;
                 }
-            }
+            };
         })( style, basestyles[style] );
 
     }

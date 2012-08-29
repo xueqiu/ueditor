@@ -161,7 +161,6 @@ UE.plugins['serialize'] = function () {
                             }
                         }
                         if ( forceDtd ) {
-
                             // 如果遇到这个标签不能放在前一个标签内部，则结束前一个标签,span单独处理
                             while ( dtd[node.tag] && !(currentNode.tag == 'span' ? utils.extend( dtd['strong'], {'a':1,'A':1} ) : (dtd[currentNode.tag] || dtd['div']))[node.tag] ) {
                                 if ( tagEnd( currentNode ) ) continue;
@@ -421,6 +420,11 @@ UE.plugins['serialize'] = function () {
                 .replace( /<!--[\s\S]*?-->/ig, "" )
                 //转换图片
                 .replace(/<v:shape [^>]*>[\s\S]*?.<\/v:shape>/gi,function(str){
+                    //opera能自己解析出image所这里直接返回空
+                    if(browser.opera){
+                        return '';
+                    }
+
                     try{
                         var width = str.match(/width:([ \d.]*p[tx])/i)[1],
                             height = str.match(/height:([ \d.]*p[tx])/i)[1],
@@ -442,9 +446,10 @@ UE.plugins['serialize'] = function () {
                 //清除多余的font不能匹配&nbsp;有可能是空格
                 .replace( /<font[^>]*>\s*<\/font>/gi, '' )
                 //清除多余的class
-                .replace( /class\s*=\s*["']?(?:(?:MsoTableGrid)|(?:MsoListParagraph)|(?:MsoNormal(Table)?))\s*["']?/gi, '' );
+                .replace( /class\s*=\s*["']?(?:(?:MsoTableGrid)|(?:MsoListParagraph)|(?:MsoNormal(Table)?))\s*["']?/gi, '')
 
-            // Examine all styles: delete junk, transform some, and keep the rest
+
+
             //修复了原有的问题, 比如style='fontsize:"宋体"'原来的匹配失效了
             str = str.replace( /(<[a-z][^>]*)\sstyle=(["'])([^\2]*?)\2/gi, function( str, tag, tmp, style ) {
 
@@ -461,6 +466,7 @@ UE.plugins['serialize'] = function () {
                     if ( parts.length == 2 ) {
                         name = parts[0].toLowerCase();
                         value = parts[1].toLowerCase();
+
                         // Translate certain MS Office styles into their CSS equivalents
                         switch ( name ) {
                             case "mso-padding-alt":
@@ -529,6 +535,7 @@ UE.plugins['serialize'] = function () {
                                 }
                                 continue;
                             case 'margin':
+
                                 if ( !/[1-9]/.test( parts[1] ) ) {
                                     continue;
                                 }
@@ -538,7 +545,12 @@ UE.plugins['serialize'] = function () {
 //                            if ( !/mso\-list/.test( name ) )
                                 continue;
                         }
-                        n[i] = name + ":" + parts[1];        // Lower-case name, but keep value case
+
+                        if(/text\-indent|padding|margin/.test(name) && /\-[\d.]+/.test(value)){
+
+                            continue;
+                        }
+                        n[i] = name + ":" + parts[1];
                     }
                 }
                 // If style attribute contained any valid styles the re-write it; otherwise delete style attribute.
@@ -611,7 +623,15 @@ UE.plugins['serialize'] = function () {
             case 'script':
                 node.tag = 'div';
                 node.attributes._ue_div_script = 1;
-                node.attributes._ue_script_data = node.children[0] ? node.children[0].data  : '';
+                node.attributes._ue_script_data = node.children[0] ? encodeURIComponent(node.children[0].data)  : '';
+                node.attributes._ue_custom_node_ = 1;
+                node.children = [];
+                break;
+            case 'style':
+                node.tag = 'div';
+                node.attributes._ue_div_style = 1;
+                node.attributes._ue_style_data = node.children[0] ? encodeURIComponent(node.children[0].data)  : '';
+                node.attributes._ue_custom_node_ = 1;
                 node.children = [];
                 break;
             case 'img':
@@ -632,7 +652,7 @@ UE.plugins['serialize'] = function () {
                     node.attributes.word_img = node.attributes.src;
                     node.attributes.src = me.options.UEDITOR_HOME_URL + 'themes/default/images/spacer.gif';
                     var flag = parseInt(node.attributes.width)<128||parseInt(node.attributes.height)<43;
-                    node.attributes.style="background:url(" + me.options.UEDITOR_HOME_URL +"themes/default/images/"+(flag?"word.gif":"localimage.png")+") no-repeat center center;border:1px solid #ddd";
+                    node.attributes.style="background:url(" + (flag? me.options.UEDITOR_HOME_URL +"themes/default/images/word.gif":me.options.langPath+me.options.lang + "/images/localimage.png")+") no-repeat center center;border:1px solid #ddd";
                     //node.attributes.style = 'width:395px;height:173px;';
                     word_img_flag && (word_img_flag.flag = 1);
                 }
@@ -782,12 +802,6 @@ UE.plugins['serialize'] = function () {
 //                }
                 var style = node.attributes.style;
                 if ( style ) {
-                    //trace:1493
-                    //ff3.6出来的是background: none repeat scroll %0 %0 颜色
-                    style = style.match( /(?:\b(?:color|font-size|background(-color)?|font-family|text-decoration)\b\s*:\s*(&[^;]+;|[^;])+(?=;)?)/gi );
-                    if ( style ) {
-                        node.attributes.style = style.join( ';' );
-                    }
                     if ( !node.attributes.style  || browser.webkit && style == "white-space:nowrap;") {
                         delete node.attributes.style;
                     }
@@ -894,16 +908,29 @@ UE.plugins['serialize'] = function () {
             case 'div' :
                 if(node.attributes._ue_div_script){
                     node.tag = 'script';
-                    node.children = [{type:'cdata',data:node.attributes._ue_script_data||'',parent:node}];
+                    node.children = [{type:'cdata',data:node.attributes._ue_script_data?decodeURIComponent(node.attributes._ue_script_data):'',parent:node}];
                     delete node.attributes._ue_div_script;
                     delete node.attributes._ue_script_data;
-                    break;
+                    delete node.attributes._ue_custom_node_;
+
                 }
+                if(node.attributes._ue_div_style){
+                    node.tag = 'style';
+                    node.children = [{type:'cdata',data:node.attributes._ue_style_data?decodeURIComponent(node.attributes._ue_style_data):'',parent:node}];
+                    delete node.attributes._ue_div_style;
+                    delete node.attributes._ue_style_data;
+                    delete node.attributes._ue_custom_node_;
+
+                }
+                break;
             case 'table':
                 !node.attributes.style && delete node.attributes.style;
                 if ( ie && node.attributes.style ) {
 
                     optStyle( node );
+                }
+                if(node.attributes['class'] == 'noBorderTable'){
+                    delete node.attributes['class'];
                 }
                 break;
             case 'td':

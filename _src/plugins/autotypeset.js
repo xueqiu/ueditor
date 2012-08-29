@@ -37,7 +37,9 @@ UE.plugins['autotypeset'] = function(){
         },
         tags = {
             div:1,
-            p:1
+            p:1,
+            //trace:2183 这些也认为是行
+            blockquote:1,center:1,h1:1,h2:1,h3:1,h4:1,h5:1,h6:1
         },
         highlightCont;
     //升级了版本，但配置项目里没有autotypeset
@@ -62,7 +64,7 @@ UE.plugins['autotypeset'] = function(){
         if(!node.style.cssText){
             domUtils.removeAttributes(node,['style']);
             if(node.tagName.toLowerCase() == 'span' && domUtils.hasNoAttributes(node)){
-                domUtils.remove(node,true)
+                domUtils.remove(node,true);
             }
         }
     }
@@ -70,7 +72,9 @@ UE.plugins['autotypeset'] = function(){
 
         var cont;
         if(html){
-            if(!opt.pasteFilter)return;
+            if(!opt.pasteFilter){
+                return;
+            }
             cont = me.document.createElement('div');
             cont.innerHTML = html.html;
         }else{
@@ -86,13 +90,13 @@ UE.plugins['autotypeset'] = function(){
              //font-size
             if(opt.clearFontSize && ci.style.fontSize){
                 ci.style.fontSize = '';
-                removeNotAttributeSpan(ci)
+                removeNotAttributeSpan(ci);
 
             }
             //font-family
             if(opt.clearFontFamily && ci.style.fontFamily){
                 ci.style.fontFamily = '';
-                removeNotAttributeSpan(ci)
+                removeNotAttributeSpan(ci);
             }
 
             if(isLine(ci)){
@@ -115,10 +119,12 @@ UE.plugins['autotypeset'] = function(){
 
             }
             if(isLine(ci,true) ){
-                if(opt.indent)
+                if(opt.indent){
                     ci.style.textIndent = opt.indentValue;
-                if(opt.textAlign)
+                }
+                if(opt.textAlign){
                     ci.style.textAlign = opt.textAlign;
+                }
 //                if(opt.lineHeight)
 //                    ci.style.lineHeight = opt.lineHeight + 'cm';
 
@@ -131,7 +137,7 @@ UE.plugins['autotypeset'] = function(){
                 if(highlightCont && highlightCont.contains(ci)){
                      continue;
                 }
-                domUtils.removeAttributes(ci,['class'])
+                domUtils.removeAttributes(ci,['class']);
             }
 
             //表情不处理
@@ -154,12 +160,12 @@ UE.plugins['autotypeset'] = function(){
                                     if(pre && next && pre.nodeType == 1 &&  next.nodeType == 1 && pre.tagName == next.tagName && domUtils.isBlockElm(pre)){
                                         pre.appendChild(tmpNode.firstChild);
                                         while(next.firstChild){
-                                            pre.appendChild(next.firstChild)
+                                            pre.appendChild(next.firstChild);
                                         }
                                         domUtils.remove(tmpNode);
                                         domUtils.remove(next);
                                     }else{
-                                        domUtils.setStyle(tmpNode,'text-align','')
+                                        domUtils.setStyle(tmpNode,'text-align','');
                                     }
 
 
@@ -205,12 +211,13 @@ UE.plugins['autotypeset'] = function(){
             //去掉冗余的标签
             if(opt.removeEmptyNode){
                 if(opt.removeTagNames[ci.tagName.toLowerCase()] && domUtils.hasNoAttributes(ci) && domUtils.isEmptyBlock(ci)){
-                    domUtils.remove(ci)
+                    domUtils.remove(ci);
                 }
             }
         }
-        if(html)
-            html.html = cont.innerHTML
+        if(html){
+            html.html = cont.innerHTML;
+        }
     }
     if(opt.pasteFilter){
         me.addListener('beforepaste',autotype);

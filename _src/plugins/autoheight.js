@@ -10,7 +10,9 @@ UE.plugins['autoheight'] = function () {
     var me = this;
     //提供开关，就算加载也可以关闭
     me.autoHeightEnabled = me.options.autoHeightEnabled !== false ;
-    if (!me.autoHeightEnabled)return;
+    if (!me.autoHeightEnabled){
+        return;
+    }
 
     var bakOverflow,
         span, tmpNode,
@@ -42,7 +44,7 @@ UE.plugins['autoheight'] = function () {
                 domUtils.remove(tmpNode);
 
             }
-        }, 50)
+        }, 50);
     }
     me.addListener('destroy', function () {
         me.removeListener('contentchange', adjustHeight);
@@ -50,7 +52,9 @@ UE.plugins['autoheight'] = function () {
         me.removeListener('mouseup', adjustHeight);
     });
     me.enableAutoHeight = function () {
-        if(!me.autoHeightEnabled)return;
+        if(!me.autoHeightEnabled){
+            return;
+        }
         var doc = me.document;
         me.autoHeightEnabled = true;
         bakOverflow = doc.body.style.overflowY;
@@ -81,8 +85,8 @@ UE.plugins['autoheight'] = function () {
         domUtils.on(browser.ie ? me.body : me.document,browser.webkit ? 'dragover' : 'drop',function(){
             clearTimeout(timer);
             timer = setTimeout(function(){
-                adjustHeight()
-            },100)
+                adjustHeight();
+            },100);
 
         });
         var win = domUtils.getWindow(me.document)

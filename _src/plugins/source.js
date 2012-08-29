@@ -115,7 +115,7 @@
 //                    return new Array(m.length + 1).join('&nbsp;');
 //                }).replace(/(?:^ )|(?: $)/g, '&nbsp;');
 //            }
-            text = text.replace(/&nbsp;/g, ' ')
+            text = text.replace(/&nbsp;/g, ' ');
             this.buff.push(text);
 
         },
@@ -208,6 +208,9 @@
         var sourceEditor;
         opt.sourceEditor = opt.sourceEditor || 'codemirror';
 
+        me.setOpt({
+            sourceEditorFirst:false
+        });
         function createSourceEditor(holder){
             return sourceEditors[opt.sourceEditor == 'codemirror' && window.CodeMirror ? 'codemirror' : 'textarea'](me, holder);
         }
@@ -220,9 +223,10 @@
                 if (sourceMode) {
                     me.undoManger && me.undoManger.save();
                     this.currentSelectedArr && domUtils.clearSelectedArr(this.currentSelectedArr);
-                    if(browser.gecko)
+                    if(browser.gecko){
                         me.body.contentEditable = false;
-                    
+                    }
+
                     bakCssText = me.iframe.style.cssText;
                     me.iframe.style.cssText += 'position:absolute;left:-32768px;top:-32768px;';
 
@@ -261,7 +265,7 @@
                         }
                         var range = me.selection.getRange();
                         if(first.nodeType == 3 || dtd.$empty[first.tagName]){
-                            range.setStartBefore(first)
+                            range.setStartBefore(first);
                         }else{
                             range.setStart(first,0);
                         }
@@ -280,21 +284,22 @@
                                 setTimeout(function(){
                                     me.body.contentEditable = true;
                                     range.setCursor(false,true);
-                                    domUtils.remove(input)
-                                })
+                                    domUtils.remove(input);
+                                });
 
-                            })
+                            });
                         }else{
                             range.setCursor(false,true);
                         }
 
-                    })
+                    });
                 }
                 this.fireEvent('sourcemodechanged', sourceMode);
             },
             queryCommandState: function (){
                 return sourceMode|0;
-            }
+            },
+            notNeedUndo : 1
         };
         var oldQueryCommandState = me.queryCommandState;
         me.queryCommandState = function (cmdName){
@@ -317,16 +322,23 @@
                 }
                 return html;
             }else{
-                return oldGetContent.apply(this, arguments)
+                return oldGetContent.apply(this, arguments);
             }
         };
         if(opt.sourceEditor == "codemirror"){
+
             me.addListener("ready",function(){
                 utils.loadFile(document,{
                     src : opt.codeMirrorJsUrl || opt.UEDITOR_HOME_URL + "third-party/codemirror2.15/codemirror.js",
                     tag : "script",
                     type : "text/javascript",
                     defer : "defer"
+                },function(){
+                    if(opt.sourceEditorFirst){
+                        setTimeout(function(){
+                            me.execCommand("source");
+                        },0);
+                    }
                 });
                 utils.loadFile(document,{
                     tag : "link",

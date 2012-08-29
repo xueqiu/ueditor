@@ -48,7 +48,7 @@
          * @return {Boolean} true：为数组，false：不为数组
          */
 		isArray: function(array) {
-			return Object.prototype.toString.apply(array) === '[object Array]'
+			return Object.prototype.toString.apply(array) === '[object Array]';
 		},
 		/**
          * 判断是否为字符串
@@ -186,17 +186,26 @@
          * @param {String} str      需要转义的字符串
          * @returns {String}        转义后的字符串
          */
-		unhtml: function(str) {
-           return str ? str.replace(/[&<">]/g, function(m){
+		unhtml: function(str,reg) {
+           return str ? str.replace(reg || /[&<">]/g, function(m){
                return {
                    '<': '&lt;',
-                   '&': '&amp',
+                   '&': '&amp;',
                    '"': '&quot;',
                    '>': '&gt;'
                }[m]
            }) : '';
 		},
-
+        html:  function(str) {
+            return str ? str.replace(/&((g|l|quo)t|amp);/g, function(m){
+                return {
+                    '&lt;':'<',
+                    '&amp;':'&',
+                    '&quot;':'"',
+                    '&gt;': '>'
+                }[m]
+            }) : '';
+        },
 		/**
          * 将css样式转换为驼峰的形式。如font-size -> fontSize
          * @public
@@ -223,25 +232,45 @@
          * @param {Function}   fun  回调函数
          * @param {String}     id   元素id
          */
-        loadFile : function(doc,obj,fun){
-            if (obj.id && doc.getElementById(obj.id)) {
-				return;
-			}
-            var element = doc.createElement(obj.tag);
-            delete obj.tag;
-            for(var p in obj){
-                element.setAttribute(p,obj[p]);
-            }
-			element.onload = element.onreadystatechange = function() {
-                if (!this.readyState || /loaded|complete/.test(this.readyState)) {
-                    fun && fun();
-                    element.onload = element.onreadystatechange = null;
+        loadFile : function(){
+            var tmpList = {};
+            return function(doc,obj,fun){
+                var item = tmpList[obj.src||obj.href];
+                if(item){
+                    if(utils.isArray(item.funs)){
+                        item.ready?fun():tmpList[obj.src||obj.href].funs.push(fun);
+                    }
+                    return;
                 }
-			};
+                tmpList[obj.src||obj.href] = fun? {'funs' : [fun]} :1;
 
-			doc.getElementsByTagName("head")[0].appendChild(element);
-
-        },
+                if(!doc.body){
+                    doc.write('<script src="'+obj.src+'"></script>');
+                    return;
+                }
+                if (obj.id && doc.getElementById(obj.id)) {
+                    return;
+                }
+                var element = doc.createElement(obj.tag);
+                delete obj.tag;
+                for(var p in obj){
+                    element.setAttribute(p,obj[p]);
+                }
+                element.onload = element.onreadystatechange = function() {
+                    if (!this.readyState || /loaded|complete/.test(this.readyState)) {
+                        item =  tmpList[obj.src||obj.href];
+                        if(item.funs){
+                            item.ready = 1;
+                            for(var fi;fi=item.funs.pop();){
+                                fi();
+                            }
+                        }
+                        element.onload = element.onreadystatechange = null;
+                    }
+                };
+                doc.getElementsByTagName("head")[0].appendChild(element);
+            }
+        }(),
         /**
          * 判断对象是否为空
          * @param {Object} obj
@@ -257,7 +286,6 @@
             // chrome下,'function' == typeof /a/ 为true.
             return '[object Function]' == Object.prototype.toString.call(source);
         },
-
         fixColor : function (name, value) {
             if (/color/i.test(name) && /rgba?/.test(value)) {
                 var array = value.split(",");
@@ -268,16 +296,15 @@
                     color = parseInt(color.replace(/[^\d]/gi, ''), 10).toString(16);
                     value += color.length == 1 ? "0" + color : color;
                 }
-
                 value = value.toUpperCase();
             }
             return  value;
         },
         /**
-            * 只针对border,padding,margin做了处理，因为性能问题
-            * @public
-            * @function
-            * @param {String}    val style字符串
+        * 只针对border,padding,margin做了处理，因为性能问题
+        * @public
+        * @function
+        * @param {String}    val style字符串
         */
         optCss : function(val){
             var padding,margin,border;
@@ -294,15 +321,15 @@
                             return '';
                         case 'border':
                             return val == 'initial' ? '' : str;
-
                     }
                 }
-                return str
+                return str;
             });
 
             function opt(obj,name){
-                if(!obj)
-                    return ''
+                if(!obj){
+                    return '';
+                }
                 var t = obj.top ,b = obj.bottom,l = obj.left,r = obj.right,val = '';
                 if(!t || !l || !b || !r){
                     for(var p in obj){
@@ -317,13 +344,10 @@
                 return val;
             }
             val += opt(padding,'padding') + opt(margin,'margin');
-
             return val.replace(/^[ \n\r\t;]*|[ \n\r\t]*$/,'').replace(/;([ \n\r\t]+)|\1;/g,';')
                 .replace(/(&((l|g)t|quot|#39))?;{2,}/g,function(a,b){
-
                     return b ? b + ";;" : ';'
-                })
-
+                });
         },
         /**
          * DOMContentLoaded 事件注册
@@ -342,11 +366,11 @@
                 }
             }
             return function(onready){
+                if ( document.readyState === "complete" ) {
+                    return onready && setTimeout( onready, 1 );
+                }
                 onready && fnArr.push(onready);
-
                 isReady && doReady();
-
-
                 if( browser.ie ){
                     (function(){
                         if ( isReady ) return;
@@ -364,14 +388,9 @@
                         document.removeEventListener( "DOMContentLoaded", arguments.callee, false );
                         doReady();
                     }, false );
-
+                    window.addEventListener('load',doReady,false);
                 }
             }
-
-
         }()
-
 	};
-
-
     utils.domReady();

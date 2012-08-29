@@ -68,7 +68,10 @@ var browser = UE.browser = function(){
     if ( browser.ie )
     {
         version = parseFloat( agent.match( /msie (\d+)/ )[1] );
-
+        /**
+         * 检测浏览器是否为 IE9 模式
+         */
+        browser.ie9Compat = document.documentMode == 9;
         /**
          * 检测浏览器是否为 IE8 浏览器
          * @name baidu.editor.browser.IE8
@@ -185,4 +188,5 @@ var browser = UE.browser = function(){
 //快捷方式
 var ie = browser.ie,
     webkit = browser.webkit,
-    gecko = browser.gecko;
+    gecko = browser.gecko,
+    opera = browser.opera;
