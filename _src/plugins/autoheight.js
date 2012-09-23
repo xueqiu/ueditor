@@ -18,10 +18,18 @@ UE.plugins['autoheight'] = function () {
         span, tmpNode,
         lastHeight = 0,
         currentHeight,
+        $uew,
+        doc,
         timer;
     var adjustHeight = me.adjustHeight = function () {
         clearTimeout(timer);
-        timer = setTimeout(function () {
+        timer = setTimeout(UE.browser.mac ? function () {
+            var st = $win.scrollTop()
+            $uew.height(me.options.minFrameHeight || 70)
+            var dsh = doc.documentElement.scrollHeight
+            if (dsh > me.options.minFrameHeight || 70) $uew.height(dsh)
+            $win.scrollTop(st)
+        } : function () {
             if (me.queryCommandState('source') != 1) {
                 if (!span) {
                     span = me.document.createElement('span');
@@ -55,7 +63,8 @@ UE.plugins['autoheight'] = function () {
         if(!me.autoHeightEnabled){
             return;
         }
-        var doc = me.document;
+        $uew = $(me.iframe).parent();
+        doc = me.document;
         me.autoHeightEnabled = true;
         bakOverflow = doc.body.style.overflowY;
         doc.body.style.overflowY = 'hidden';
