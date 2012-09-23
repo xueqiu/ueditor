@@ -15,35 +15,15 @@ UE.plugins['autoheight'] = function () {
     }
 
     var bakOverflow,
-        span, tmpNode,
-        lastHeight = 0,
-        currentHeight,
+        $uew,
+        doc,
         timer;
     var adjustHeight = me.adjustHeight = function () {
         clearTimeout(timer);
         timer = setTimeout(function () {
-            if (me.queryCommandState('source') != 1) {
-                if (!span) {
-                    span = me.document.createElement('span');
-                    //trace:1764
-                    span.style.cssText = 'display:block;width:0;margin:0;padding:0;border:0;clear:both;';
-                    span.innerHTML = '.';
-                }
-                tmpNode = span.cloneNode(true);
-                me.body.appendChild(tmpNode);
-
-                currentHeight = Math.max(domUtils.getXY(tmpNode).y + tmpNode.offsetHeight, me.options.minFrameHeight);
-
-                if (currentHeight != lastHeight) {
-
-                    me.setHeight(currentHeight);
-
-                    lastHeight = currentHeight;
-                }
-
-                domUtils.remove(tmpNode);
-
-            }
+            $uew.height(70)
+            var dsh = doc.documentElement.scrollHeight || doc.body.scrollHeight
+            if (dsh > 70) $uew.height(dsh)
         }, 50);
     }
     me.addListener('destroy', function () {
@@ -55,7 +35,8 @@ UE.plugins['autoheight'] = function () {
         if(!me.autoHeightEnabled){
             return;
         }
-        var doc = me.document;
+        $uew = $(me.iframe).parent()
+        doc = me.document;
         me.autoHeightEnabled = true;
         bakOverflow = doc.body.style.overflowY;
         doc.body.style.overflowY = 'hidden';
