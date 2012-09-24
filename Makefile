@@ -24,4 +24,4 @@ src = _src/editor_seajs_start.js\
 dafault: concat
 
 concat:
-	cat $(src) > ueditor.js
+	cat $(src) > ueditor.js && dos2unix ueditor.js && unix2dos ueditor.js
