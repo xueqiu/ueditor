@@ -23,7 +23,7 @@ UE.plugins['autoheight'] = function () {
         timer;
     var adjustHeight = me.adjustHeight = function () {
         clearTimeout(timer);
-        timer = setTimeout(UE.browser.mac ? function () {
+        timer = setTimeout(UE.browser.chrome ? function () {
             var st = $win.scrollTop()
             $uew.height(me.options.minFrameHeight || 70)
             var dsh = doc.documentElement.scrollHeight
