@@ -15,7 +15,6 @@ src = _src/editor_seajs_start.js\
 	  _src/plugins/font.js\
 	  _src/plugins/basestyle.js\
 	  _src/plugins/inserthtml.js\
-	  _src/plugins/list.js\
 	  _src/plugins/serialize.js\
 	  _src/plugins/paste.js\
 	  _src/plugins/autoheight.js\
