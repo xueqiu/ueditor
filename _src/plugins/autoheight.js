@@ -22,7 +22,7 @@ UE.plugins['autoheight'] = function () {
     var adjustHeight = me.adjustHeight = function () {
         clearTimeout(timer);
         timer = setTimeout(function () {
-            var dsh = body.scrollHeight
+            var dsh = browser.ie ? body.scrollHeight : $(body).height()
             var mh = me.options.minFrameHeight || 70
             dsh = dsh > mh ? dsh : mh
             $uew.height(dsh)
