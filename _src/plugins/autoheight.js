@@ -15,43 +15,17 @@ UE.plugins['autoheight'] = function () {
     }
 
     var bakOverflow,
-        span, tmpNode,
         lastHeight = 0,
-        currentHeight,
         $uew,
-        doc,
+        body,
         timer;
     var adjustHeight = me.adjustHeight = function () {
         clearTimeout(timer);
-        timer = setTimeout(UE.browser.chrome ? function () {
-            var st = $win.scrollTop()
-            $uew.height(me.options.minFrameHeight || 70)
-            var dsh = doc.documentElement.scrollHeight
-            if (dsh > me.options.minFrameHeight || 70) $uew.height(dsh)
-            $win.scrollTop(st)
-        } : function () {
-            if (me.queryCommandState('source') != 1) {
-                if (!span) {
-                    span = me.document.createElement('span');
-                    //trace:1764
-                    span.style.cssText = 'display:block;width:0;margin:0;padding:0;border:0;clear:both;';
-                    span.innerHTML = '.';
-                }
-                tmpNode = span.cloneNode(true);
-                me.body.appendChild(tmpNode);
-
-                currentHeight = Math.max(domUtils.getXY(tmpNode).y + tmpNode.offsetHeight, me.options.minFrameHeight);
-
-                if (currentHeight != lastHeight) {
-
-                    me.setHeight(currentHeight);
-
-                    lastHeight = currentHeight;
-                }
-
-                domUtils.remove(tmpNode);
-
-            }
+        timer = setTimeout(function () {
+            var dsh = body.scrollHeight
+            var mh = me.options.minFrameHeight || 70
+            dsh = dsh > mh ? dsh : mh
+            $uew.height(dsh)
         }, 50);
     }
     me.addListener('destroy', function () {
@@ -64,10 +38,10 @@ UE.plugins['autoheight'] = function () {
             return;
         }
         $uew = $(me.iframe).parent();
-        doc = me.document;
+        body = me.document.body;
         me.autoHeightEnabled = true;
-        bakOverflow = doc.body.style.overflowY;
-        doc.body.style.overflowY = 'hidden';
+        bakOverflow = body.style.overflowY;
+        body.style.overflowY = 'hidden';
         me.addListener('contentchange', adjustHeight);
         me.addListener('keyup', adjustHeight);
         me.addListener('mouseup', adjustHeight);

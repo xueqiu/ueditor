@@ -200,6 +200,7 @@
             me.body = doc.body;
             //设置编辑器最小高度
             me.setHeight( options.minFrameHeight );
+            me.body.style.height = 'auto';
             me.selection = new dom.Selection( doc );
             //gecko初始化就能得到range,无法判断isFocus了
             var geckoSel;
@@ -300,9 +301,9 @@
          */
         setHeight:function ( height ) {
             if ( height !== parseInt( this.iframe.parentNode.style.height ) ) {
-                this.iframe.parentNode.style.height = height + 'px';
+                this.iframe.parentNode.style.minHeight = height + 'px';
             }
-            this.document.body.style.height = height - 20 + 'px';
+            this.document.body.style.minHeight = height + 'px';
         },
 
         /**
