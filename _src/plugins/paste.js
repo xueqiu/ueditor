@@ -34,7 +34,7 @@
                         'div':{'br':1,'BR':1,'$':{}},
                         'li':{'$':{}},
                         'img':{'$':{'height':1,'width':1,'src':1,'class':1}},
-                        'span':{'br':1,'$':{'style':1}},
+                        'span':{'br':1,'$':{'style':1,'id':1}},
                         'strong':{'br':1,'span':1}
                     },
                     blackList: {
@@ -220,6 +220,8 @@
                 }
        
             });
+            var endId = '___ie_paste_end___'
+              , ctrlv
             //ie下beforepaste在点击右键时也会触发，所以用监控键盘才处理
                 domUtils.on(me.body, browser.ie || browser.opera ? 'keydown' : 'paste',function(e){
                     if (browser.opera && (!e.ctrlKey || e.keyCode != '86')) return;
@@ -227,7 +229,7 @@
                       if (!e.ctrlKey || e.keyCode != '86') {
                         return;
                       } else {
-                        iebk.ctrlv = true
+                        ctrlv = true
                       }
                     }
                     getClipboardData.call( me, function( div ) {
@@ -237,58 +239,24 @@
 
                 });
 
-            var iebk = {}
-            , ierange
-            , startId = '___ie_paste_start___'
-            , bookmarkStart = function() {
-                var startNode = me.document.getElementById(startId) // 光标的开始点
-                if (startNode) {
-                  domUtils.remove(startNode)
-                } else {
-                  startNode = me.document.createElement('span')
-                  startNode.id = startId
-                }
-                ierange = me.selection.getRange()
-                var _bk = ierange.createBookmark()
-                ierange.setStartBefore(_bk.start)
-                // 未选中文字时，IE 粘贴入文字会把前面的空标签清除，这样
-                // startNode 在粘贴后会消失，需要将 startNode 设置到当前标签外层
-                while ( ierange.startOffset == 0 ) {
-                    if ( domUtils.isBody( ierange.startContainer ) )break;
-                    ierange.setStartBefore( ierange.startContainer );
-                }
-                ierange.insertNode(startNode) // 将 startNode 设置到当前标签外层
-                ierange.moveToBookmark(_bk) // 再把光标设置回来
-                if (!ierange.collapsed) ierange.select(true)
-                iebk.start = startNode
-              }
-            , removeBookmarkStart = function() {
-                var startNode = me.document.getElementById(startId)
-                if (startNode) {
-                  domUtils.remove(startNode)
-                }
-              }
-            if (browser.ie ) {
-              domUtils.on(me.body, 'contextmenu', bookmarkStart)
-              domUtils.on(me.body, 'click', removeBookmarkStart)
-              domUtils.on(me.window, 'blur', removeBookmarkStart)
+            if (browser.ie) {
               domUtils.on(me.body, 'paste', function(ev){
-                if (iebk.ctrlv) {
-                  delete iebk.ctrlv
+                if (ctrlv) {
+                  ctrlv = false
                   return
                 }
                 setTimeout(function() {
-                  iebk.start = me.document.getElementById(startId)
-                  if (!iebk.start) {
-                    return
-                  }
-                  var div = me.document.createElement( 'div' )
-                  , range = me.selection.getRange()
-                  iebk.end = range.createBookmark().start
-                  range.moveToBookmark( iebk )
-                  range.enlarge()
-                  div.appendChild(range.extractContents())
-                  filter(div)
+                  var endNode
+                  endNode = me.document.createElement('span')
+                  endNode.appendChild( this.document.createTextNode( '\uFEFF' ) );
+                  endNode.id = endId
+                  var range
+                  range = me.selection.getRange()
+                  range.insertNode(endNode)
+                  var cc = SNB.Util.cleanContent(me.body.innerHTML, true, me, true)
+                  me.setContent(cc, true)
+                  range = me.selection.getRange()
+                  range.moveToBookmark({id:true,start:endId}).select()
                 }, 0)
               })
             }
@@ -298,4 +266,3 @@
     };
 
 })();
-

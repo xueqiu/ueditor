@@ -1039,10 +1039,10 @@ UE.plugins['serialize'] = function () {
                 }
                 if ( whiteList ) {
                     if ( node.type == 'element' ) {
-                        if ( node.name == 'img' || parent.type == 'fragment' ? whiteList[node.name] : whiteList[node.name] && whiteList[parent.name][node.name] ) {
+                        if ( node.name == 'img' || (node.name == 'span' && node.attributes.id == '___ie_paste_end___') || parent.type == 'fragment' ? whiteList[node.name] : whiteList[node.name] && whiteList[parent.name][node.name] ) {
 
                             var props;
-                            if ( (props = whiteList[node.name].$) ) {
+                            if ( (props = whiteList[node.name].$) && node.attributes.id != '___ie_paste_end___' ) {
                                 var oldAttrs = node.attributes;
                                 var newAttrs = {};
                                 for ( var k in props ) {
@@ -1060,10 +1060,20 @@ UE.plugins['serialize'] = function () {
                               && node.attributes['data-name']
                               && node.children
                               && node.children.length == 1
-                              && node.children[0].type == 'text'
-                              && node.children[0].data[0] != '@'
                             ) {
-                              node.children[0].data = '@' + node.children[0].data
+                              if (node.children[0].type == 'text' && node.children[0].data[0] != '@') {
+                                node.children[0].data = '@' + node.children[0].data
+                              } else if (node.children[0].type == 'element'
+                                && node.children[0].tag == 'span'
+                                && node.children[0].attributes.style
+                                && node.children[0].attributes.style.match(/0055a2/i)
+                                && node.children[0].children
+                                && node.children[0].children.length == 1
+                                && node.children[0].children[0].type == 'text'
+                                && node.children[0].children[0].data[0] != '@'
+                              ) {
+                                node.children[0].children[0].data = '@' + node.children[0].children[0].data
+                              }
                             }
                             modify && (modify.flag = 1);
                             node.type = 'fragment';
