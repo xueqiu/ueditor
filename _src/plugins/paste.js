@@ -220,44 +220,129 @@
                 }
        
             });
-            var endId = '___ie_paste_end___'
-              , ctrlv
+            var ctrlv
             //ie下beforepaste在点击右键时也会触发，所以用监控键盘才处理
-                domUtils.on(me.body, browser.ie || browser.opera ? 'keydown' : 'paste',function(e){
-                    if (browser.opera && (!e.ctrlKey || e.keyCode != '86')) return;
-                    if (browser.ie) {
-                      if (!e.ctrlKey || e.keyCode != '86') {
-                        return;
-                      } else {
-                        ctrlv = true
-                      }
-                    }
-                    getClipboardData.call( me, function( div ) {
-                        filter(div);
-                    } );
+            domUtils.on(me.body, browser.ie ? 'keydown' : 'paste',function(e){
+                if (browser.ie) {
+                  if (!e.ctrlKey || e.keyCode != '86') {
+                    return;
+                  } else {
+                    ctrlv = true
+                  }
+                }
+                getClipboardData.call( me, function( div ) {
+                    filter(div);
+                } );
+            });
 
-
-                });
-
+            var doc = me.document
+              , bk = {}
+              , pb
             if (browser.ie) {
+              function rf(type) {
+                if (bk.start) domUtils.remove(bk.start)
+                if (bk.end) domUtils.remove(bk.end)
+                var divs = doc.getElementsByTagName('div')
+                  , div, i
+                if (divs.length) for (i=-1;div=divs[++i];) {
+                  if (div.className != 'ie_pastebin') continue
+                  else domUtils.remove(div)
+                }
+                pb = bk.start = bk.end = null
+              }
+              me.addListener('contentchange', rf);
+              me.addListener('keyup', rf);
+              me.addListener('mouseup', rf);
+              me.addListener('contextmenu', function() {
+                var range = me.selection.getRange()
+                  , pb = doc.createElement( 'div' )
+                  , contents = range.cloneContents()
+                  , cihtml = ''
+                  , i, node
+
+                //以下粘贴 getClipboardData() 简化
+                bk = range.createBookmark()
+                doc.body.appendChild( pb );
+                //trace:717 隐藏的span不能得到top
+                //bk.start.innerHTML = '&nbsp;';
+                bk.start.style.display = '';
+                pb.className = 'ie_pastebin';
+                pb.style.cssText = "position:absolute;width:1px;height:1px;overflow:hidden;left:-1000px;white-space:nowrap;top:" +
+                    //要在现在光标平行的位置加入，否则会出现跳动的问题
+                    domUtils.getXY( bk.start ).y + 'px';
+
+                //为右键 cut 复制内容
+                if ( contents && contents.childNodes && contents.childNodes.length ) {
+                  for ( i = -1, cihtml = ''; node = contents.childNodes[++i]; ) {
+                    cihtml += node.innerHTML || node.textContent || node.innerText || node.nodeValue
+                  }
+                }
+                pb.innerHTML = cihtml
+                range.selectNodeContents( pb ).select( true );
+              });
+
+              //cut 和 copy 只差是否删除原选区内容，用 donUtils.on(me.body, ['cut', 'copy']... 会有问题
+              domUtils.on(me.body, 'cut', function(){
+                setTimeout(function(){
+                  var range = me.selection.getRange()
+                  if (!bk.start) return
+                  range.moveToBookmark(bk)
+                  if (!range.collapsed) range.deleteContents()
+                  range.select()
+                  rf()
+                },0)
+              })
+              domUtils.on(me.body, 'copy', function(){
+                setTimeout(function(){
+                  var range = me.selection.getRange()
+                  if (!bk.start) return
+                  range.moveToBookmark(bk).select()
+                  rf()
+                },0)
+              })
               domUtils.on(me.body, 'paste', function(ev){
                 if (ctrlv) {
                   ctrlv = false
                   return
+                } else if (bk.start) {
+                  setTimeout(function(){
+                    var b = bk
+                    var range = me.selection.getRange()
+                    var doc = me.document
+                    var pbs = doc.getElementsByTagName('div')
+                      , pb, i, html, start, node, nextNode, p
+                    if (pbs.length) for (i=-1;pb=pbs[++i];) {
+                      if (pb.className != 'ie_pastebin') continue
+                      else if (domUtils.isEmptyNode(pb)) domUtils.remove(pb)
+                      else break
+                    }
+                    if (pb) {
+                      try{
+                        pb.parentNode.removeChild(pb);
+                      }catch(e){}
+                      //以下粘贴简化 filter()
+                      html = pb.innerHTML;
+                      if (SNB && SNB.Util && 'function' == typeof SNB.Util.parseContent) {
+                        html = SNB.Util.parseContent(html, true)
+                      }
+
+                      html = pasteFilter(html, me)
+
+                      //自定义的处理
+                      html = {'html':html};
+
+                      me.fireEvent('beforepaste',html);
+                      //不用在走过滤了
+                      try {
+                        range.moveToBookmark(bk).select()
+                      }catch(e){}
+                      if (range.startContainer.id == 'ie_pastebin') return alert('error')
+                      me.execCommand('insertHtml',html.html,true);
+                      me.fireEvent("afterpaste");
+                      me.adjustHeight()
+                    }
+                  },0)
                 }
-                setTimeout(function() {
-                  var endNode
-                  endNode = me.document.createElement('span')
-                  endNode.appendChild( this.document.createTextNode( '\uFEFF' ) );
-                  endNode.id = endId
-                  var range
-                  range = me.selection.getRange()
-                  range.insertNode(endNode)
-                  var cc = SNB.Util.cleanContent(me.body.innerHTML, true, me, true)
-                  me.setContent(cc, true)
-                  range = me.selection.getRange()
-                  range.moveToBookmark({id:true,start:endId}).select()
-                }, 0)
               })
             }
 
