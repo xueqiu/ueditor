@@ -274,7 +274,8 @@
                 //为右键 cut 复制内容
                 if ( contents && contents.childNodes && contents.childNodes.length ) {
                   for ( i = -1, cihtml = ''; node = contents.childNodes[++i]; ) {
-                    cihtml += node.innerHTML || node.textContent || node.innerText || node.nodeValue
+                    if (node.outerHTML) cihtml += node.outerHTML.match(/<span[>]*bookmark/i) ? '' : node.outerHTML
+                    else cihtml += node.textContent || node.innerText || node.nodeValue || ''
                   }
                 }
                 pb.innerHTML = cihtml
